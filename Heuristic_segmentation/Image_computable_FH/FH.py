@@ -1,4 +1,0 @@
-'''
- FH Implementation methods Sklearn
-
-''' 
