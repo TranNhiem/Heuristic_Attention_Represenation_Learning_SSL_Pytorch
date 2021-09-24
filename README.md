@@ -7,7 +7,7 @@ Awesome! Building this project, See [ Guidelines](contribution_guideline.md).
 
 ## Our Project Structure 
 
-![](images/project_pipline.png)
+![](images/Method_proposal_Pipeline.png)
 
 1. **SECTION 1**  Huristic Mask Proposal Methods 
 
