@@ -9,7 +9,7 @@ Awesome! Building this project, See [ Guidelines](contribution_guideline.md).
 
 ![](images/Method_proposal_Pipeline.png)
 
-1. **SECTION 1**  Huristic Mask Proposal Methods 
+1. **SECTION 1  Huristic Mask Proposal Methods** 
 
 + Implementation on Classical ML Methods **/Heuristic_Segmentation/Classical_ML_methods/**
 
