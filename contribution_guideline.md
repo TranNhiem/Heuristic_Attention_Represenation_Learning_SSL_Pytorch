@@ -7,9 +7,11 @@ Code writtent by filing some requirements
 Discussing the current state of the code
 Submitting a fix
 
-+ Proposing new features
++ **All Visualization Proposing new features**
 
-2. all contributions should be **well design** and avoid **repeating code section**
+Providing the **Googlecolab Notebook link**
+
+2. All contributions should be **well design** and avoid **repeating code section**
 
 Open issue regarding proposed change.
 If your proposed change is approved, Fork this repo and do changes.
