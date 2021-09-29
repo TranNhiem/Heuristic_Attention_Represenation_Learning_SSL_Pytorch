@@ -1,3 +1,0 @@
-'''
-ResNet backbone
-'''
