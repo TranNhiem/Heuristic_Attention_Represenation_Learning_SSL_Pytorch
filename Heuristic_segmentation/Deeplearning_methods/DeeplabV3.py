@@ -9,6 +9,9 @@ from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
 
 import torch
+import torchvision
+
+
 
 def Generated_mask(image=None):
     model = torch.hub.load('pytorch/vision:v0.10.0', 'deeplabv3_resnet50', pretrained=True)
