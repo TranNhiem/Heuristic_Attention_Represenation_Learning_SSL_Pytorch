@@ -33,4 +33,18 @@ GoogleColab Notebook Implementation [SimCLR_Augmentation](https://colab.research
 
 
 ### 4. **SECTION 4 Multi-Objectives Self-Superivsed Framework**
-+ 
+
++ Heuristic Attention Contrastive frameworks Implementation Include three different approaches 
+
++ Conventional Contrastive Framework
+
+![](images/conventional_contrastive.jpg)
+
++ Binary Contrastive Framework based on binary segmentation mask
+
+![](images/Binary_contrastive_framework.jpg)
+
++ Semantic Contrastive Framework based on Semantic segmentation mask
+
+![](images/semantic_contrastive_framework.jpg)
+
