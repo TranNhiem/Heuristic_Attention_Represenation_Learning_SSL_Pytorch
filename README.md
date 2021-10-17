@@ -38,13 +38,13 @@ GoogleColab Notebook Implementation [SimCLR_Augmentation](https://colab.research
 
 + Conventional Contrastive Framework
 
-![](images/conventional_contrastive.jpg =200x200)
+![](images/conventional_contrastive.jpg){:height=Ó50%Ó width=Ó50%Ó}
 
 + Binary Contrastive Framework based on binary segmentation mask
 
-![](images/Binary_contrastive_framework.jpg =200x200)
+![](images/Binary_contrastive_framework.jpg){:height=Ó50%Ó width=Ó50%Ó}
 
 + Semantic Contrastive Framework based on Semantic segmentation mask
 
-![](images/semantic_contrastive_framework.jpg =200x200)
+![](images/semantic_contrastive_framework.jpg){:height=Ó50%Ó width=Ó50%Ó}
 
