@@ -38,7 +38,7 @@ GoogleColab Notebook Implementation [SimCLR_Augmentation](https://colab.research
 
 + Conventional Contrastive Framework
 
-<img src="images/conventional_contrastive.jpg"  width="50%">
+<img src="images/conventional_contrastive.jpg"  width="25%">
 
 + Binary Contrastive Framework based on binary segmentation mask
 
