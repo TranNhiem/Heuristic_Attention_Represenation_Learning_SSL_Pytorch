@@ -11,7 +11,7 @@ Awesome! Building this project, See [ Guidelines](contribution_guideline.md).
 
 ![](images/Method_proposal_Pipeline.png)
 
-### 1. **SECTION 1  Huristic Mask Proposal Methods** 
+### **SECTION 1  Huristic Mask Proposal Methods** 
 
 + Implementation on Classical ML Methods **/Heuristic_Segmentation/Classical_ML_methods/**
 
@@ -21,18 +21,18 @@ Detail of implementation (FH, MCG,FastMCG, DRFI )
 
 Detail of implementation (DeepMask, DeepLabV3, others ) 
 
-### 2. **SECTION 2  Implement DataAugmentation Two Views and Multi-Views** 
+### **SECTION 2  Implement DataAugmentation Two Views and Multi-Views** 
 
 + Standard Implement SimCLR + BYOL Augmentation strategy
 GoogleColab Notebook Implementation [SimCLR_Augmentation](https://colab.research.google.com/drive/1Xsh3O8NYxUcUcBy3avJbqrWcpcg-6uid?authuser=2)
 
 + Implementation Multi-View Augmentation Strategy SwAV (Global + Local Views)
 
-### 3. **SECTION 3 Neural Net Architecture**
+### **SECTION 3 Neural Net Architecture**
 + Under Development
 
 
-### 4. **SECTION 4 Multi-Objectives Self-Superivsed Framework**
+### **SECTION 4 Multi-Objectives Self-Superivsed Framework**
 
 + Heuristic Attention Contrastive frameworks Implementation Include three different approaches 
 
