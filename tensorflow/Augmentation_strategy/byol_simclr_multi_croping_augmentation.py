@@ -361,6 +361,7 @@ def simclr_augment_randcrop_global_views(image, IMG_SIZE):
     image = random_apply(color_jitter, p=0.8, x=image, )
     image = random_apply(color_drop, p=0.2, x=image, )
     image = random_apply(random_blur, p=1.0, x=image,)
+    image= image/255.
     return image
 
 def simclr_augment_inception_style(image, IMG_SIZE):
@@ -375,4 +376,5 @@ def simclr_augment_inception_style(image, IMG_SIZE):
     image = random_apply(color_jitter, p=0.8, x=image, )
     image = random_apply(color_drop, p=0.2, x=image, )
     image = random_apply(random_blur, p=1.0, x=image,)
+    image= image/255.
     return image
