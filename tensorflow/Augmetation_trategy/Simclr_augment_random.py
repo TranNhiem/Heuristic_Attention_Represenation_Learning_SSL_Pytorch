@@ -55,7 +55,6 @@ def gaussian_blur(image, kernel_size, sigma, padding='SAME'):
 
 # Random Apply with Probability
 
-
 def random_apply(func, x, p):
     if tf.random.uniform([], minval=0, maxval=1) < p:
         return func(x)
@@ -199,14 +198,12 @@ def flip_random_crop(image, crop_size):
 
     return image
 # Local Croping --Under experiment
-
-
 def random_crop_flip_resize(image, IMG_SIZE):
     # Random cropping
-    h_crop = tf.cast(tf.random.uniform(shape=[], minval=13,
-                     maxval=33, dtype=tf.int32), tf.float32)
+    h_crop = tf.cast(tf.random.uniform(shape=[], minval=30,
+                     maxval=224, dtype=tf.int32), tf.float32)
 
-    w_crop = h_crop * tf.random.uniform(shape=[], minval=0.67, maxval=1.0)
+    w_crop = h_crop * tf.random.uniform(shape=[], minval=0.4, maxval=1.0)
     h_crop, w_crop = tf.cast(h_crop, tf.int32), tf.cast(w_crop, tf.int32)
 
     opposite_aspectratio = tf.random.uniform(shape=[])
@@ -225,9 +222,36 @@ def random_crop_flip_resize(image, IMG_SIZE):
 
     return image
 
+## Random Global and Local Croping 
+def rand_distribe_crop_global_local_views_flip(image, crop_size, min_scale, max_scale, high_resol=True):
+    '''
+        Args:
+            image: A tensor [ with, height, channels]
+        
+            crop_size: Rand --> Flipping --> random_distribute_uniform (min_scale, max_scale) 
+            high_resol --> True: For Global crop_view, False: For Local crop views
+            AutoAugment: a function to apply AutoAugment transformation 
+
+        Return: 
+            Image: A tensor of Applied transformation [with, height, channels]
+    '''
+    
+    flp_img = tf.image.random_flip_left_right(image)
+    crp_ratio = crop_size * 1.4 if high_resol else crop_size * 0.8  
+    image_shape = tf.cast(crp_ratio, dtype=tf.int32)
+    image_shape = tf.cast(image_shape, tf.float32)
+    resz_flp_img = tf.image.resize(flp_img, (image_shape, image_shape))
+
+    size = tf.random.uniform(shape=(1,), minval=min_scale*image_shape, 
+                    maxval=max_scale*image_shape, dtype=tf.float32)
+    size = tf.cast(size, tf.int32)[0]
+    # Get crop_size
+    rnd_flp_crp = tf.image.random_crop(resz_flp_img, (size, size, 3))
+    # Return image with Crop_size
+    return tf.image.resize(rnd_flp_crp, (crop_size, crop_size))
+
+   
 # Inception Style Croping
-
-
 def inception_style_croping(image, height, width):
     """Make a random crop and resize it to height `height` and width `width`.
     Args:
@@ -252,7 +276,6 @@ def inception_style_croping(image, height, width):
 
 # This random brightness implement in SimCLRV2
 # Magnitude reference form BYOL
-
 
 def color_jitter(image, strength=[0.4, 0.4, 0.2, 0.1]):
     '''
@@ -316,6 +339,29 @@ def simclr_augment_randcrop(image, IMG_SIZE):
     image = random_apply(random_blur, p=1.0, x=image,)
     return image
 
+
+
+def simclr_augment_randcrop_global_views(image, IMG_SIZE):
+    '''
+  
+    args: 
+    image: Input image transformation 
+    IMG_SIZE: Image size for training 
+    min_scale-- max_scale: Random Croping distribution with distribution 
+    '''
+
+    # IMG_SIZE=IMG_SIZE
+    # As discussed in the SimCLR paper, the series of augmentation
+    # transformations (except for random crops) need to be applied
+    # randomly to impose translational invariance. (Two Options implementation)
+    min_scale=0.5
+    max_scale=1.0
+
+    image= rand_distribe_crop_global_local_views_flip(image, IMG_SIZE, min_scale, max_scale, high_resol=True )
+    image = random_apply(color_jitter, p=0.8, x=image, )
+    image = random_apply(color_drop, p=0.2, x=image, )
+    image = random_apply(random_blur, p=1.0, x=image,)
+    return image
 
 def simclr_augment_inception_style(image, IMG_SIZE):
     # IMG_SIZE=IMG_SIZE
