@@ -45,7 +45,7 @@ parser.add_argument('--warmup_epochs', type=int, default=10,
 parser.add_argument('--mode', type=str, default="mix_pre_fp16_v1", choices=["mix_precision_fp16_", "mix_precision_fp16", "mix_pre_fp16_v1", "mix_pre_fp16_v1_", "mix_per_pack_NCCL"],
                     help='mix_precision_implementation or orignal mode')
 parser.add_argument('--communication_method', type=str,
-                    default="auto", choices=["NCCL", "auto", ])
+                    default="NCCL", choices=["NCCL", "auto", ])
 
 args = parser.parse_args()
 
@@ -141,6 +141,7 @@ with strategy.scope():
         Optimizer_type= args.optimizer
         optimizers= get_optimizer(lr_schedule, Optimizer_type)
         LARS=optimizers.original_optimizer(args)
+        LARS_mix_percision = mixed_precision.LossScaleOptimizer(LARS)
         #### Tracking Experiment
         configs = {
                 "Model_Arch": "ResNet50",
@@ -172,13 +173,41 @@ with strategy.scope():
                 rep_ds2_projt= MLP(rep_ds2)
                 loss = co_distributed_loss(rep_ds1_projt, rep_ds2_projt, temperature, global_batch_size)
 
-            ## Backward pass
-            # Backbone Encoder
-            grads = tape.gradient(loss, resnet_encoder.trainable_variables)
-            LARS.apply_gradients(zip(grads, resnet_encoder.trainable_variables))
+            ## Backward pass Mixpercision Gradient
+            
+            # Backbone Encoder                  
+            fp32_grads = tape.gradient(loss, resnet_encoder.trainable_variables)
+                
+            fp16_grads = [tf.cast(grad, 'float16') for grad in fp32_grads]
+            
+            hints = tf.distribute.experimental.CollectiveHints(bytes_per_pack=32 * 1024 * 1024)
+
+            all_reduce_fp16_grads = tf.distribute.get_replica_context().all_reduce(tf.distribute.ReduceOp.SUM, fp16_grads, options=hints)
+
+            all_reduce_fp32_grads = [tf.cast(grad, 'float32') for grad in all_reduce_fp16_grads]
+
+            all_reduce_fp32_grads = LARS_mix_percision.get_unscaled_gradients( all_reduce_fp32_grads)
+      
+            LARS_mix_percision.apply_gradients(zip(all_reduce_fp32_grads, resnet_encoder.trainable_variables),experimental_aggregate_gradients=False)
+            
+
             # MLP Projection
-            grads = tape.gradient(loss, MLP.trainable_variables)
-            LARS.apply_gradients(zip(grads, MLP.trainable_variables))
+            fp32_grads = tape.gradient(loss, MLP.trainable_variables)
+                
+            fp16_grads = [tf.cast(grad, 'float16') for grad in fp32_grads]
+            
+            hints = tf.distribute.experimental.CollectiveHints(bytes_per_pack=32 * 1024 * 1024)
+
+            all_reduce_fp16_grads = tf.distribute.get_replica_context().all_reduce(tf.distribute.ReduceOp.SUM, fp16_grads, options=hints)
+
+            all_reduce_fp32_grads = [tf.cast(grad, 'float32') for grad in all_reduce_fp16_grads]
+
+            all_reduce_fp32_grads = LARS_mix_percision.get_unscaled_gradients( all_reduce_fp32_grads)
+      
+            LARS_mix_percision.apply_gradients(zip(all_reduce_fp32_grads, MLP.trainable_variables),experimental_aggregate_gradients=False)
+            
+         
+            
             return loss
 
         @tf.function
