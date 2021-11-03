@@ -1,15 +1,13 @@
 import os
-from tensorflow.core.protobuf.config_pb2 import OptimizerOptions
-from tensorflow.python.keras.applications import resnet 
 import wandb
 from wandb.keras import WandbCallback
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
 import argparse
 from imutils import paths
-from losses_optimizers.learning_rate_optimizer_weight_decay_schedule import WarmUpAndCosineDecay, get_optimizer
-from Data_utils.byol_simclr_imagenet_data import imagenet_dataset
-from losses_optimizers.self_supervised_losses import nt_xent_asymetrize_loss_v2
+from tensorflows.losses_optimizers.learning_rate_optimizer_weight_decay_schedule import WarmUpAndCosineDecay, get_optimizer
+from tensorflows.Data_utils.byol_simclr_imagenet_data import imagenet_dataset
+from tensorflows.losses_optimizers.self_supervised_losses import nt_xent_asymetrize_loss_v2
 ################################################
 # Configuration 
 ################################################
@@ -79,7 +77,7 @@ def keras_Resnet_encoder(args):
 class MLP_model(tf.keras.Model):
     def __init__(self, Projection_dim):
         self.pro_dim=Projection_dim
-        super(MLP, self).__init__()
+        super(MLP_model, self).__init__()
         self.fc1 = tf.keras.layers.Dense(units= self.pro_dim)
         self.bn = tf.keras.layers.BatchNormalization()
         self.fc2 = tf.keras.layers.Dense(units= self.pro_dim/2)
