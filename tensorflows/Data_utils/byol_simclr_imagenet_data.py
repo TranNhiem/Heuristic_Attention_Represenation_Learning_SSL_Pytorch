@@ -1,7 +1,7 @@
 import tensorflow as tf
 import os 
 from imutils import paths
-from Augmentation_strategy.byol_simclr_multi_croping_augmentation import simclr_augment_randcrop_global_views, simclr_augment_inception_style
+from tensorflows.Augmentation_strategy.byol_simclr_multi_croping_augmentation import simclr_augment_randcrop_global_views, simclr_augment_inception_style
 from official.vision.image_classification.augment import RandAugment
 
 AUTO = tf.data.experimental.AUTOTUNE

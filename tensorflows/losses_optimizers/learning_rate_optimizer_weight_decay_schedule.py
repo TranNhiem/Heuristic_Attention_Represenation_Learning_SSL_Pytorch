@@ -40,18 +40,17 @@ in SimCLR & BYOL with warmup steps =10
 #import tensorflow as tf
 
 
+# this helper function determine steps per epoch
+
+
+
+
 import tensorflow.keras.backend as K
-from utils.args import parse_args
 import numpy as np
 import math
 import tensorflow as tf
 import tensorflow_addons as tfa
-from losses.lars_optimizer_v2 import LARS_optimzer
-args = parse_args()
-
-# this helper function determine steps per epoch
-
-
+from tensorflows.losses_optimizers.lars_optimizer_v2 import LARS_optimzer
 def get_centralized_gradients(optimizer, loss, params):
     """Compute the centralized gradients.
 
@@ -123,7 +122,7 @@ def centralized_gradients_for_optimizer(optimizer):
     return get_centralized_gradients_for_optimizer
 
 
-def get_train_steps(num_examples,train_epochs,gloabl_batch_size, train_steps=None):
+def get_train_steps(num_examples, train_epochs, gloabl_batch_size, train_steps=None):
     """Determine the number of training steps."""
     if train_steps is None:
         train_steps = (num_examples * train_epochs //
@@ -160,20 +159,20 @@ class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
     num_example
     """
 
-    def __init__(self, base_learning_rate,batch_size, num_examples, learning_rate_scale, warmup_epochs,train_epochs, train_steps=None, name=None):
+    def __init__(self, base_learning_rate, batch_size, num_examples, learning_rate_scale, warmup_epochs, train_epochs, train_steps=None, name=None):
         super(WarmUpAndCosineDecay, self).__init__()
         self.base_learning_rate = base_learning_rate
         self.num_examples = num_examples
-        self.Batch_size=batch_size
-        self.learning_rate_scale=learning_rate_scale
-        self.warmup_epochs=warmup_epochs
-        self.train_epochs=train_epochs
-        self.train_steps= train_steps
+        self.Batch_size = batch_size
+        self.learning_rate_scale = learning_rate_scale
+        self.warmup_epochs = warmup_epochs
+        self.train_epochs = train_epochs
+        self.train_steps = train_steps
         self._name = name
 
     def __call__(self, step):
         with tf.name_scope(self._name or 'WarmUpAndCosineDecay'):
-         
+
             warmup_steps = int(
                 round(self.warmup_epochs * self.num_examples //
                       self.Batch_size))
@@ -191,7 +190,8 @@ class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
                 step / float(warmup_steps) * scaled_lr if warmup_steps else scaled_lr)
 
             # Cosine decay learning rate schedule
-            total_steps = get_train_steps(self.num_examples,self.train_epochs, self.batch_size, self.train_steps)
+            total_steps = get_train_steps(
+                self.num_examples, self.train_epochs, self.batch_size, self.train_steps)
             # TODO(srbs): Cache this object.
             cosine_decay = tf.keras.experimental.CosineDecay(
                 scaled_lr, total_steps - warmup_steps)
@@ -229,9 +229,9 @@ class get_optimizer():
 
     def __init__(self, learning_rate, optimizer_option):
         self.learning_rate = learning_rate
-        self.optimizer_ops=optimizer_option
-        
-    def orignal_optimizer(self,args):
+        self.optimizer_ops = optimizer_option
+
+    def orignal_optimizer(self, args):
         '''Args
           - arsg.optimizer type + Learning rate
           Return Optimizer
@@ -254,21 +254,21 @@ class get_optimizer():
                                                                  'head_supervised'])
         return optimizer
 
-    def optimizer_weight_decay(self,args):
+    def optimizer_weight_decay(self, args):
         '''Args
           -args.optimizer + args.weight_decay
           Return Optimizer with weight Decay 
         '''
-        if  self.optimizer_ops == "AdamW":
+        if self.optimizer_ops == "AdamW":
             print("You are implement Adam Weight decay optimizer")
             optimizer = tfa.optimizers.AdamW(
                 weight_decay=args.weight_decay, learning_rate=self.learning_rate)
-        if  self.optimizer_ops == "SGDW":
+        if self.optimizer_ops == "SGDW":
             print("You are implement SGD Weight Decay optimizer")
             optimizer = tfa.optimizers.SGDW(
                 weight_decay=args.weight_decay, learning_rate=self.learning_rate)
 
-        if  self.optimizer_ops == "LARSW":
+        if self.optimizer_ops == "LARSW":
             print("You are implement LARS weight decay optimizer")
             optimizer = LARS_optimzer(learning_rate=self.learning_rate,
                                       momentum=args.momentum,
@@ -284,19 +284,19 @@ class get_optimizer():
         return Optimizer with Centralization gradient
 
         '''
-        if  self.optimizer_ops == 'AdamGC':
+        if self.optimizer_ops == 'AdamGC':
             print("You are implement Adam Gradient Centralization optimizer")
             optimizer = tf.keras.optimizers.Adam(
                 learning_rate=self.learning_rate)
             optimizer.get_gradients = centralized_gradients_for_optimizer(
                 optimizer)
-        if self.optimizer_ops== "SGDGC":
+        if self.optimizer_ops == "SGDGC":
             print("You are implement SGD Gradient Centralization optimizer")
             optimizer = tf.keras.optimizers.SGD(
                 learning_rate=self.learning_rate, momentum=args.momentum)
             optimizer.get_gradients = centralized_gradients_for_optimizer(
                 optimizer)
-        if  self.optimizer_ops == "LARSGC":
+        if self.optimizer_ops == "LARSGC":
             print("You are implement LARS Gradient Centralization optimizer")
             optimizer = LARS_optimzer(learning_rate=self.learning_rate,
                                       momentum=args.momentum,
@@ -308,22 +308,25 @@ class get_optimizer():
 
     def optimizer_weight_decay_gradient_centralization(self, args):
 
-        if  self.optimizer_ops == "AdamW_GC":
-            print("You are implement Adam weight decay and Gradient Centralization optimizer")
+        if self.optimizer_ops == "AdamW_GC":
+            print(
+                "You are implement Adam weight decay and Gradient Centralization optimizer")
             optimizer = tfa.optimizers.AdamW(
                 weight_decay=args.weight_decay, learning_rate=self.learning_rate)
             optimizer.get_gradients = centralized_gradients_for_optimizer(
                 optimizer)
 
-        if  self.optimizer_ops == "SGDW_GC":
-            print("You are implement SGD weight decay and Gradient Centralization optimizer")
+        if self.optimizer_ops == "SGDW_GC":
+            print(
+                "You are implement SGD weight decay and Gradient Centralization optimizer")
             optimizer = tfa.optimizers.SGDW(
                 weight_decay=args.weight_decay, learning_rate=self.learning_rate)
             optimizer.get_gradients = centralized_gradients_for_optimizer(
                 optimizer)
 
-        if  self.optimizer_ops == "LARSW_GC":
-            print("You are implement LARS weight decay and Gradient Centralization optimizer")
+        if self.optimizer_ops == "LARSW_GC":
+            print(
+                "You are implement LARS weight decay and Gradient Centralization optimizer")
             optimizer = LARS_optimzer(learning_rate=self.learning_rate,
                                       momentum=args.momentum,
                                       weight_decay=args.weight_decay,
