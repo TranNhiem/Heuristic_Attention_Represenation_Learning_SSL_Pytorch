@@ -191,7 +191,7 @@ class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
 
             # Cosine decay learning rate schedule
             total_steps = get_train_steps(
-                self.num_examples, self.train_epochs, self.batch_size, self.train_steps)
+                self.num_examples, self.train_epochs, self.Batch_size, self.train_steps)
             # TODO(srbs): Cache this object.
             cosine_decay = tf.keras.experimental.CosineDecay(
                 scaled_lr, total_steps - warmup_steps)
@@ -231,7 +231,7 @@ class get_optimizer():
         self.learning_rate = learning_rate
         self.optimizer_ops = optimizer_option
 
-    def orignal_optimizer(self, args):
+    def original_optimizer(self, args):
         '''Args
           - arsg.optimizer type + Learning rate
           Return Optimizer

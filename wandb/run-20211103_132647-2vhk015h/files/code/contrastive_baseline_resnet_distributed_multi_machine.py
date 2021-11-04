@@ -7,7 +7,7 @@ import argparse
 from imutils import paths
 from tensorflows.losses_optimizers.learning_rate_optimizer_weight_decay_schedule import WarmUpAndCosineDecay, get_optimizer
 from tensorflows.Data_utils.byol_simclr_imagenet_data import imagenet_dataset
-from tensorflows.losses_optimizers.self_supervised_losses import nt_xent_asymetrize_loss_v2, nt_xent_symmetrize_keras
+from tensorflows.losses_optimizers.self_supervised_losses import nt_xent_asymetrize_loss_v2
 ################################################
 # Configuration
 ################################################
@@ -15,10 +15,10 @@ parser = argparse.ArgumentParser()
 # Configure for training
 parser.add_argument('--train_epochs', type=int, default=600,
                     help='Number of iteration')
-parser.add_argument('--Batch_size', default=160, type=int,)
+parser.add_argument('--Batch_size', default=256, type=int,)
 parser.add_argument('--IMG_SIZE', default=224, type=int,)
 parser.add_argument('--seed', default=26, type=int,)
-parser.add_argument('--project_dim', default=256, type=int)
+parser.add_argument('--project_dim', default=512, type=int)
 # simclr 0.05 best contrastvie acc [0.05, 0,5, 0,1]
 parser.add_argument('--temperature', default=0.1, type=float)
 
@@ -78,32 +78,22 @@ def keras_Resnet_encoder(args):
 # 512 (h) -> 256 -> 128 (z)
 
 
-def MLP_model(projection_dim):
-    inputs = tf.keras.layers.Input((2048))
-    fc1_ = tf.keras.layers.Dense(units=projection_dim,)(inputs)
-    bn = tf.keras.layers.BatchNormalization()(fc1_)
-    relu = tf.nn.relu(bn)
-    fc1_ = tf.keras.layers.Dense(units=projection_dim,)(relu)
-    relu = tf.nn.relu(fc1_)
-    out = tf.keras.layers.Dense(units=projection_dim/2,)(relu)
-    model = tf.keras.Model(inputs=inputs, outputs=out, name="MLP_model")
-    return model
-# class MLP_model(tf.keras.Model):
-#     def __init__(self, Projection_dim):
-#         self.pro_dim = Projection_dim
-#         super(MLP_model, self).__init__()
-#         self.fc1 = tf.keras.layers.Dense(units=self.pro_dim)
-#         self.bn = tf.keras.layers.BatchNormalization()
-#         self.fc2 = tf.keras.layers.Dense(units=self.pro_dim/2)
+class MLP_model(tf.keras.Model):
+    def __init__(self, Projection_dim):
+        self.pro_dim = Projection_dim
+        super(MLP_model, self).__init__()
+        self.fc1 = tf.keras.layers.Dense(units=self.pro_dim)
+        self.bn = tf.keras.layers.BatchNormalization()
+        self.fc2 = tf.keras.layers.Dense(units=self.pro_dim/2)
 
-#     def call(self, inp, training=False):
-#         x = self.fc1(inp)
-#         x = self.bn(x, training=training)
-#         x = tf.nn.relu(x)
-#         x = self.fc1(x)
-#         x = tf.nn.relu(x)
-#         x = self.fc2(x)
-#         return x
+    def call(self, inp, training=False):
+        x = self.fc1(inp)
+        x = self.bn(x, training=training)
+        x = tf.nn.relu(x)
+        x = self.fc1(x)
+        x = tf.nn.relu(x)
+        x = self.fc2(x)
+        return x
 
 
 ################################################
@@ -136,15 +126,15 @@ with strategy.scope():
         print("Resnet Encoder architecture")
         resnet_encoder.summary()
         MLP = MLP_model(args.project_dim)
-        #MLP.build(input_shape=(None, 2048))
+        MLP.build(input_shape=(None, args.project_dim))
         print("MLP Model architecture")
         MLP.summary()
 
         # Get model loss and Optimizer
         # Deeper Investiage distribute batch
         def co_distributed_loss(p, z, temperature, distribute_batch):
-            per_batch_co_distribute_loss = nt_xent_symmetrize_keras(
-                p, z, temperature)
+            per_batch_co_distribute_loss = nt_xent_asymetrize_loss_v2(
+                p, z, temperature, per_worker_batch_size)
             return tf.nn.compute_average_loss(per_batch_co_distribute_loss, global_batch_size=distribute_batch)
         #train_loss = tf.keras.metrics.Mean(name="train_loss")
         # Cosine decay warmup learning
@@ -181,7 +171,7 @@ with strategy.scope():
         @tf.function()
         def train_step(ds_one, ds_two):  # (bs, 32, 32, 3), (bs)
             # Forward pass
-            with tf.GradientTape(persistent=True) as tape:
+            with tf.GradientTape() as tape:
                 # (bs, 512)
                 rep_ds1 = resnet_encoder(ds_one, training=True)  # (bs,)
                 rep_ds1_projt = MLP(rep_ds1)
@@ -232,7 +222,7 @@ with strategy.scope():
 
             LARS_mix_percision.apply_gradients(zip(
                 all_reduce_fp32_grads, MLP.trainable_variables), experimental_aggregate_gradients=False)
-            del tape
+
             return loss
 
         @tf.function

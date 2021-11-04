@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.python.ops.gen_batch_ops import batch
 import tensorflow_addons as tfa
 import numpy as np
 
@@ -96,6 +95,7 @@ def nt_xent_asymetrize_loss(z,  temperature):
 
 # Mask to remove the positive example from the rest of Negative Example
 
+
 def get_negative_mask(batch_size):
     # return a mask that removes the similarity score of equal/similar images
     # Ensure distinct pair of image get their similarity scores
@@ -114,33 +114,54 @@ cosine_sim_2d = tf.keras.losses.CosineSimilarity(
     axis=2, reduction=tf.keras.losses.Reduction.NONE)
 
 
-def nt_xent_asymetrize_loss_v2(p, z,  temperature, negative_mask):  # negative_mask
+def nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
     # L2 Norm
+    batch_size = tf.shape(p)[0]
+    sess = tf.compat.v1.Session()
+    batch_size = sess.run(batch_size)
+    labels = tf.one_hot(tf.range(batch_size), batch_size * 2)
+    masks = tf.one_hot(tf.range(batch_size), batch_size)
 
     p_l2 = tf.math.l2_normalize(p, axis=1)
     z_l2 = tf.math.l2_normalize(z, axis=1)
-    similarity = tf.matmul(tf.expand_dims(p_l2, 1), tf.expand_dims(z_l2, 2))
-    batch_size = tf.shape(p, out_type=tf.dtypes.int32)[0]
-    print(batch_size)
-    similarity = (tf.reshape(similarity, (batch_size, 1)))/temperature
+
+    # Cosine Similarity distance loss
+
+    # pos_loss = consie_sim_1d(p_l2, z_l2)
+    pos_loss = tf.matmul(tf.expand_dims(p_l2, 1), tf.expand_dims(z_l2, 2))
+
+    pos_loss = (tf.reshape(pos_loss, (batch_size, 1)))/temperature
+
     negatives = tf.concat([p_l2, z_l2], axis=0)
-    #negative_mask = get_negative_mask(batch_size)
+    # Mask out the positve mask from batch of Negative sample
+    negative_mask = get_negative_mask(batch_size)
 
     loss = 0
     for positives in [p_l2, z_l2]:
-        l_negative = tf.tensordot(tf.expand_dims(
+
+        # negative_loss = cosine_sim_2d(positives, negatives)
+        negative_loss = tf.tensordot(tf.expand_dims(
             positives, 1), tf.expand_dims(tf.transpose(negatives), 0), axes=2)
         l_labels = tf.zeros(batch_size, dtype=tf.int32)
-        l_neg = tf.boolean_mask(l_negative, negative_mask)
-        l_neg = tf.reshape(l_neg, (batch_size, -1))/temperature
-        logits = tf.concat([similarity, l_neg], axis=1)
-        loss += tf.keras.losses.SparseCategoricalCrossentropy(y_pred=logits, y_true=l_labels,
-                                                              from_logits=True, reduction=tf.keras.losses.Reduction.SUM)
+        l_neg = tf.boolean_mask(negative_loss, negative_mask)
+
+        l_neg = tf.reshape(l_neg, (batch_size, -1))
+        l_neg /= temperature
+
+        logits = tf.concat([pos_loss, l_neg], axis=1)  # [N, K+1]
+        tf.keras.losses.SparseCategoricalCrossentropy()
+        loss_ = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True, reduction=tf.keras.losses.Reduction.SUM)
+        loss += loss_(y_pred=logits, y_true=l_labels)
+
     loss = loss/(2*batch_size)
+
     return loss
+
 
 '''SimCLR Paper Nt-Xent Loss # SYMMETRIZED Loss'''
 # Nt-Xent Loss Symmetrized
+
 
 def nt_xent_symmetrize_keras(p, z, temperature):
     # cosine similarity the dot product of p,z two feature vectors
@@ -167,12 +188,14 @@ def nt_xent_symmetrize_keras(p, z, temperature):
 '''BYOL SYMETRIZE LOSS'''
 # Symetric LOSS
 
+
 def byol_symetrize_loss(p, z):
     p = tf.math.l2_normalize(p, axis=1)  # (2*bs, 128)
     z = tf.math.l2_normalize(z, axis=1)  # (2*bs, 128)
 
     similarities = tf.reduce_sum(tf.multiply(p, z), axis=1)
     return 2 - 2 * tf.reduce_mean(similarities)
+
 
 '''Loss 2 SimSiam Model'''
 # Asymetric LOSS
