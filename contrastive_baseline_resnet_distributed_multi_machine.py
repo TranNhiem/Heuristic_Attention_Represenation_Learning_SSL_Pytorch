@@ -116,7 +116,9 @@ strategy = tf.distribute.MultiWorkerMirroredStrategy(
 with strategy.scope():
 
     def main(args):
-
+        ##***********************************************
+        #Data Processing Configure 
+        ##***********************************************
         per_worker_batch_size = args.Batch_size
         num_workers = 2  # len(tf_config['cluster']['worker'])
         global_batch_size = per_worker_batch_size * num_workers
@@ -131,7 +133,10 @@ with strategy.scope():
         multi_worker_dataset = strategy.distribute_datasets_from_function(
             lambda input_context: dataset.simclr_inception_style_crop(input_context))
 
+        ##***********************************************
         # Configure Neural Net architecture
+        ##***********************************************
+
         resnet_encoder = keras_Resnet_encoder(args)
         print("Resnet Encoder architecture")
         resnet_encoder.summary()
@@ -140,13 +145,25 @@ with strategy.scope():
         print("MLP Model architecture")
         MLP.summary()
 
+        ##***********************************************
         # Get model loss and Optimizer
+        ##***********************************************
+
         # Deeper Investiage distribute batch
         def co_distributed_loss(p, z, temperature, distribute_batch):
             per_batch_co_distribute_loss = nt_xent_symmetrize_keras(
                 p, z, temperature)
             return tf.nn.compute_average_loss(per_batch_co_distribute_loss, global_batch_size=distribute_batch)
+        # Tracking metrics to measure Loss 
+        all_metric=[]
+        contrast_loss_metric=[]
+        contrast_acc_metric=[]
+        
+
+
         #train_loss = tf.keras.metrics.Mean(name="train_loss")
+
+
         # Cosine decay warmup learning
         base_lr = 0.3
         scale_lr = args.learning_rate_scaling
