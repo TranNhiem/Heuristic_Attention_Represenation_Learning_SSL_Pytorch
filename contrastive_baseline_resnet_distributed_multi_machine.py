@@ -21,7 +21,9 @@ parser.add_argument('--seed', default=26, type=int,)
 parser.add_argument('--project_dim', default=256, type=int)
 # simclr 0.05 best contrastvie acc [0.05, 0,5, 0,1]
 parser.add_argument('--temperature', default=0.1, type=float)
-
+parser.add_argument('--train_mode', default="pretrain",
+                    type=str, choices=["pretrain", "fine_tune"])
+parser.add_argument('--lineareval_while_pretraining', default=True, type=bool)
 # Configure Learning Rate and Optimizer
 # In optimizer we will have three Option ('Original Configure', 'Weight Decay', 'Gradient Centralization')
 
@@ -116,9 +118,9 @@ strategy = tf.distribute.MultiWorkerMirroredStrategy(
 with strategy.scope():
 
     def main(args):
-        ##***********************************************
-        #Data Processing Configure 
-        ##***********************************************
+        # ***********************************************
+        # Data Processing Configure
+        # ***********************************************
         per_worker_batch_size = args.Batch_size
         num_workers = 2  # len(tf_config['cluster']['worker'])
         global_batch_size = per_worker_batch_size * num_workers
@@ -133,9 +135,9 @@ with strategy.scope():
         multi_worker_dataset = strategy.distribute_datasets_from_function(
             lambda input_context: dataset.simclr_inception_style_crop(input_context))
 
-        ##***********************************************
+        # ***********************************************
         # Configure Neural Net architecture
-        ##***********************************************
+        # ***********************************************
 
         resnet_encoder = keras_Resnet_encoder(args)
         print("Resnet Encoder architecture")
@@ -145,24 +147,14 @@ with strategy.scope():
         print("MLP Model architecture")
         MLP.summary()
 
-        ##***********************************************
-        # Get model loss and Optimizer
-        ##***********************************************
+        # ***********************************************
+        # Get model loss Learning Rate Schedule and Optimizer
+        # ***********************************************
 
-        # Deeper Investiage distribute batch
         def co_distributed_loss(p, z, temperature, distribute_batch):
             per_batch_co_distribute_loss = nt_xent_symmetrize_keras(
                 p, z, temperature)
             return tf.nn.compute_average_loss(per_batch_co_distribute_loss, global_batch_size=distribute_batch)
-        # Tracking metrics to measure Loss 
-        all_metric=[]
-        contrast_loss_metric=[]
-        contrast_acc_metric=[]
-        
-
-
-        #train_loss = tf.keras.metrics.Mean(name="train_loss")
-
 
         # Cosine decay warmup learning
         base_lr = 0.3
@@ -171,10 +163,33 @@ with strategy.scope():
         train_epochs = args.train_epochs
         lr_schedule = WarmUpAndCosineDecay(
             base_lr, global_batch_size, total_training_sample, scale_lr, warmup_epochs, train_epochs)
+
         Optimizer_type = args.optimizer
         optimizers = get_optimizer(lr_schedule, Optimizer_type)
         LARS = optimizers.original_optimizer(args)
         LARS_mix_percision = mixed_precision.LossScaleOptimizer(LARS)
+
+        # ***********************************************
+        # Tracking metrics to measure Loss & Accuracy
+        # ***********************************************
+        all_metric = []
+
+        # Self_Supervised Tracking Metrics
+        contrast_loss_metric = tf.keras.metrics.Mean(
+            name="train/Contrast_loss")
+        contrast_acc_metric = tf.keras.metrics.Mean(name="train/Contrast_acc")
+        all_metric.extend([contrast_loss_metric, contrast_acc_metric])
+
+        # Supervised FineTune Metrics
+        if args.lineareval_while_training:
+            supervised_loss_metric = tf.keras.metrics.Mean(
+                name="train/supervised_loss")
+            supervised_acc_metric = tf.keras.metrics.Mean(
+                name="train/spervised_acc")
+            all_metric.extend([supervised_loss_metric, supervised_acc_metric])
+
+        #train_loss = tf.keras.metrics.Mean(name="train_loss")
+
         # Tracking Experiment
         configs = {
             "Model_Arch": "ResNet50",
@@ -324,11 +339,20 @@ with strategy.scope():
             train_loss = total_loss/num_batches
 
             if epoch % 2 == 0:
+                # ************************************
+                # Logging Result with Weight and Bias
+                # ************************************
 
                 wandb.log({
                     "epochs": epoch,
                     "train_loss": train_loss,
                 })
+
+                # ************************************
+                # Logging Result with Tensorflow
+                # ************************************
+
+
 
                 template = ("Epoch {}, Train Loss: {},  ")
                 print(template.format(epoch+1, train_loss,))
