@@ -4,7 +4,10 @@ from wandb.keras import WandbCallback
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
 import argparse
+from absl import logging
+import datetime
 from imutils import paths
+from tensorflows.losses_optimizers import metric_updates
 from tensorflows.losses_optimizers.learning_rate_optimizer_weight_decay_schedule import WarmUpAndCosineDecay, get_optimizer
 from tensorflows.Data_utils.byol_simclr_imagenet_data import imagenet_dataset
 from tensorflows.losses_optimizers.self_supervised_losses import nt_xent_asymetrize_loss_v2, nt_xent_symmetrize_keras
@@ -118,6 +121,7 @@ strategy = tf.distribute.MultiWorkerMirroredStrategy(
 with strategy.scope():
 
     def main(args):
+
         # ***********************************************
         # Data Processing Configure
         # ***********************************************
@@ -188,7 +192,12 @@ with strategy.scope():
                 name="train/spervised_acc")
             all_metric.extend([supervised_loss_metric, supervised_acc_metric])
 
-        #train_loss = tf.keras.metrics.Mean(name="train_loss")
+        # Tensorboard Configure
+        #tensorboard_dir= "./tensorboard_logs/"
+        current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        train_log_dir = 'logs/%s/%s/%s/train' % (
+            "Simclr", "ResNet50_Baseline", current_time)
+        summary_writer = tf.summary.create_file_writer(train_log_dir)
 
         # Tracking Experiment
         configs = {
@@ -337,7 +346,9 @@ with strategy.scope():
                 num_batches += 1
 
             train_loss = total_loss/num_batches
+            # Updating Metric Values Here
 
+            # Condition for Logging and Saving Model
             if epoch % 2 == 0:
                 # ************************************
                 # Logging Result with Weight and Bias
@@ -351,8 +362,14 @@ with strategy.scope():
                 # ************************************
                 # Logging Result with Tensorflow
                 # ************************************
-
-
+                with summary_writer.as_default():
+                    cur_step = epoch+1
+                    metric_updates.log_and_write_metrics_to_summary(
+                        all_metric, cur_step)
+                    summary_writer.flush()
+                # Resent all metric state
+                for metric in all_metric:
+                    metric.reset_states()
 
                 template = ("Epoch {}, Train Loss: {},  ")
                 print(template.format(epoch+1, train_loss,))
