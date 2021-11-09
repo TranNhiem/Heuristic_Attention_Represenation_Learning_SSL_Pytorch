@@ -180,6 +180,51 @@ def nt_xent_symmetrize_keras(p, z, temperature):
         contrastive_labels, tf.transpose(similarity), from_logits=True, )
     return (loss_1_2 + loss_2_1) / 2
 
+'''Binary mask Loss with Nt-Xent Loss # SYMMETRIZED Loss'''
+
+def binary_mask_nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
+    # L2 Norm
+    batch_size = tf.shape(p)[0]
+    sess = tf.compat.v1.Session()
+    batch_size = sess.run(batch_size)
+    labels = tf.one_hot(tf.range(batch_size), batch_size * 2)
+    masks = tf.one_hot(tf.range(batch_size), batch_size)
+
+    p_l2 = tf.math.l2_normalize(p, axis=1)
+    z_l2 = tf.math.l2_normalize(z, axis=1)
+
+    # Cosine Similarity distance loss
+
+    # pos_loss = consie_sim_1d(p_l2, z_l2)
+    pos_loss = tf.matmul(tf.expand_dims(p_l2, 1), tf.expand_dims(z_l2, 2))
+
+    pos_loss = (tf.reshape(pos_loss, (batch_size, 1)))/temperature
+
+    negatives = tf.concat([p_l2, z_l2], axis=0)
+    # Mask out the positve mask from batch of Negative sample
+    negative_mask = get_negative_mask(batch_size)
+
+    loss = 0
+    for positives in [p_l2, z_l2]:
+
+        # negative_loss = cosine_sim_2d(positives, negatives)
+        negative_loss = tf.tensordot(tf.expand_dims(
+            positives, 1), tf.expand_dims(tf.transpose(negatives), 0), axes=2)
+        l_labels = tf.zeros(batch_size, dtype=tf.int32)
+        l_neg = tf.boolean_mask(negative_loss, negative_mask)
+
+        l_neg = tf.reshape(l_neg, (batch_size, -1))
+        l_neg /= temperature
+
+        logits = tf.concat([pos_loss, l_neg], axis=1)  # [N, K+1]
+        tf.keras.losses.SparseCategoricalCrossentropy()
+        loss_ = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True, reduction=tf.keras.losses.Reduction.SUM)
+        loss += loss_(y_pred=logits, y_true=l_labels)
+
+    loss = loss/(2*batch_size)
+
+    return loss
 
 ######################################################################################
 '''NONE CONTRASTIVE LOSS'''
