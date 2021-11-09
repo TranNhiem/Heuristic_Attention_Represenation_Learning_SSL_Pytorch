@@ -4,88 +4,63 @@ from wandb.keras import WandbCallback
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
 import argparse
-from absl import logging
-import datetime
 from imutils import paths
-from tensorflows.logs_checkpoints.training_checkpoint import checkpoint
-from tensorflows.losses_optimizers import metric_updates
 from tensorflows.losses_optimizers.learning_rate_optimizer_weight_decay_schedule import WarmUpAndCosineDecay, get_optimizer
 from tensorflows.Data_utils.byol_simclr_imagenet_data import imagenet_dataset
 from tensorflows.losses_optimizers.self_supervised_losses import nt_xent_asymetrize_loss_v2, nt_xent_symmetrize_keras
 ################################################
 # Configuration
 ################################################
+parser = argparse.ArgumentParser()
+# Configure for training
+parser.add_argument('--train_epochs', type=int, default=600,
+                    help='Number of iteration')
+parser.add_argument('--Batch_size', default=160, type=int,)
+parser.add_argument('--IMG_SIZE', default=224, type=int,)
+parser.add_argument('--seed', default=26, type=int,)
+parser.add_argument('--project_dim', default=256, type=int)
+# simclr 0.05 best contrastvie acc [0.05, 0,5, 0,1]
+parser.add_argument('--temperature', default=0.1, type=float)
+
+# Configure Learning Rate and Optimizer
+# In optimizer we will have three Option ('Original Configure', 'Weight Decay', 'Gradient Centralization')
+
+parser.add_argument('--learning_rate_scaling', metavar='learning_rate', default='linear',
+                    choices=['linear', 'sqrt', 'no_scale', ])
+
+parser.add_argument('--optimizer', type=str, default="LARS", help="Optimization for update the Gradient",
+                    choices=['Adam', 'SGD', 'LARS', 'AdamW', 'SGDW', 'LARSW',
+                             'AdamGC', 'SGDGC', 'LARSGC', 'AdamW_GC', 'SGDW_GC', 'LARSW_GC'])
+parser.add_argument('--momentum', type=float, default=0.9,
+                    help="Momentum manage how fast of update Gradient")
+
+parser.add_argument('--weight_decay', type=float, default=1e-6,
+                    help="weight_decay to penalize the update gradient")
+parser.add_argument('--warmup_epochs', type=int, default=10,
+                    help='Warmup the learning base period -- this Larger --> Warmup more slower')
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    # Configure for training
-    parser.add_argument('--train_epochs', type=int, default=600,
-                        help='Number of iteration')
-    parser.add_argument('--Batch_size', default=160, type=int,)
-    parser.add_argument('--IMG_SIZE', default=224, type=int,)
-    parser.add_argument('--seed', default=26, type=int,)
-    parser.add_argument('--project_dim', default=256, type=int)
+# Configure for Distributed training
+parser.add_argument('--mode', type=str, default="mix_pre_fp16_v1", choices=["mix_precision_fp16_", "mix_precision_fp16", "mix_pre_fp16_v1", "mix_pre_fp16_v1_", "mix_per_pack_NCCL"],
+                    help='mix_precision_implementation or orignal mode')
+parser.add_argument('--communication_method', type=str,
+                    default="auto", choices=["NCCL", "auto", ])
 
-    # simclr 0.05 best contrastvie acc [0.05, 0,5, 0,1]
-    parser.add_argument('--temperature', default=0.1, type=float)
-    parser.add_argument('--train_mode', default="pretrain",
-                        type=str, choices=["pretrain", "fine_tune"])
-    parser.add_argument('--lineareval_while_pretraining',
-                        default=True, type=bool)
+args = parser.parse_args()
 
-    # Configure Learning Rate and Optimizer
-    # In optimizer we will have three Option ('Original Configure', 'Weight Decay', 'Gradient Centralization')
-    parser.add_argument('--learning_rate_scaling', metavar='learning_rate', default='linear',
-                        choices=['linear', 'sqrt', 'no_scale', ])
+if args.communication_method == "NCCL":
 
-    parser.add_argument('--optimizer', type=str, default="LARS", help="Optimization for update the Gradient",
-                        choices=['Adam', 'SGD', 'LARS', 'AdamW', 'SGDW', 'LARSW',
-                                 'AdamGC', 'SGDGC', 'LARSGC', 'AdamW_GC', 'SGDW_GC', 'LARSW_GC'])
-    parser.add_argument('--momentum', type=float, default=0.9,
-                        help="Momentum manage how fast of update Gradient")
+    communication_options = tf.distribute.experimental.CommunicationOptions(
+        implementation=tf.distribute.experimental.CommunicationImplementation.NCCL)
 
-    parser.add_argument('--weight_decay', type=float, default=1e-6,
-                        help="weight_decay to penalize the update gradient")
-    parser.add_argument('--warmup_epochs', type=int, default=10,
-                        help='Warmup the learning base period -- this Larger --> Warmup more slower')
+elif args.communication_method == "auto":
+    communication_options = tf.distribute.experimental.CommunicationOptions(
+        implementation=tf.distribute.experimental.CollectiveCommunication.AUTO)
 
-    # Configure for Distributed training
-    parser.add_argument('--mode', type=str, default="mix_pre_fp16_v1", choices=["mix_precision_fp16_", "mix_precision_fp16", "mix_pre_fp16_v1", "mix_pre_fp16_v1_", "mix_per_pack_NCCL"],
-                        help='mix_precision_implementation or orignal mode')
-    parser.add_argument('--communication_method', type=str,
-                        default="NCCL", choices=["NCCL", "auto", ])
-
-    #args = parser.parse_args()
-    return parser.parse_args()
-
-
-args = parse_args
-# Multi-GPU distributed Training Communication Method
-
-
-def communication_options_method(args):
-
-    if args.communication_method == "NCCL":
-
-        communication_option = tf.distribute.experimental.CommunicationOptions(
-            implementation=tf.distribute.experimental.CommunicationImplementation.NCCL)
-
-    elif args.communication_method == "auto":
-        communication_option = tf.distribute.experimental.CommunicationOptions(
-            implementation=tf.distribute.experimental.CollectiveCommunication.AUTO)
-    else:
-        raise ValueError("Invalid implement Communcation Method")
-
-    return communication_option
-
-
-communication_options = communication_options_method(args)
 
 ################################################
 # Neural Net Encoder -- MLP
 ################################################
-
 
 def keras_Resnet_encoder(args):
 
@@ -113,6 +88,22 @@ def MLP_model(projection_dim):
     out = tf.keras.layers.Dense(units=projection_dim/2,)(relu)
     model = tf.keras.Model(inputs=inputs, outputs=out, name="MLP_model")
     return model
+# class MLP_model(tf.keras.Model):
+#     def __init__(self, Projection_dim):
+#         self.pro_dim = Projection_dim
+#         super(MLP_model, self).__init__()
+#         self.fc1 = tf.keras.layers.Dense(units=self.pro_dim)
+#         self.bn = tf.keras.layers.BatchNormalization()
+#         self.fc2 = tf.keras.layers.Dense(units=self.pro_dim/2)
+
+#     def call(self, inp, training=False):
+#         x = self.fc1(inp)
+#         x = self.bn(x, training=training)
+#         x = tf.nn.relu(x)
+#         x = self.fc1(x)
+#         x = tf.nn.relu(x)
+#         x = self.fc2(x)
+#         return x
 
 
 ################################################
@@ -126,16 +117,14 @@ with strategy.scope():
 
     def main(args):
 
-        # ***********************************************
-        # Data Processing Configure
-        # ***********************************************
         per_worker_batch_size = args.Batch_size
         num_workers = 2  # len(tf_config['cluster']['worker'])
         global_batch_size = per_worker_batch_size * num_workers
         temperature = args.temperature
         # Configure Training Data -- Distribute training data over multi-machine
-        train_image_path = "/data/rick109582607/Desktop/TinyML/self_supervised/imagenet_1k/train/"
-        val_image_path = "/data/rick109582607/Desktop/TinyML/self_supervised/imagenet_1k/val/"
+        #train_image_path = "/data/home/Rick/Desktop/tinyML/self-supervised/imagenet_1k/train/"
+        val_image_path = "/data/home/Rick/Desktop/tinyML/self-supervised/imagenet_1k/val/"
+        train_image_path = "/data/SSL_dataset/ImageNet/1K/"
         total_training_sample = len(list(paths.list_images(train_image_path)))
 
         dataset = imagenet_dataset(
@@ -143,27 +132,22 @@ with strategy.scope():
         multi_worker_dataset = strategy.distribute_datasets_from_function(
             lambda input_context: dataset.simclr_inception_style_crop(input_context))
 
-        # ***********************************************
         # Configure Neural Net architecture
-        # ***********************************************
-
         resnet_encoder = keras_Resnet_encoder(args)
         print("Resnet Encoder architecture")
         resnet_encoder.summary()
         MLP = MLP_model(args.project_dim)
-        #MLP.build(input_shape=(None, 2048))
+        # MLP.build(input_shape=(None,2048))
         print("MLP Model architecture")
         MLP.summary()
 
-        # ***********************************************
-        # Get model loss Learning Rate Schedule and Optimizer
-        # ***********************************************
-
+        # Get model loss and Optimizer
+        # Deeper Investiage distribute batch
         def co_distributed_loss(p, z, temperature, distribute_batch):
             per_batch_co_distribute_loss = nt_xent_symmetrize_keras(
                 p, z, temperature)
             return tf.nn.compute_average_loss(per_batch_co_distribute_loss, global_batch_size=distribute_batch)
-
+        #train_loss = tf.keras.metrics.Mean(name="train_loss")
         # Cosine decay warmup learning
         base_lr = 0.3
         scale_lr = args.learning_rate_scaling
@@ -171,38 +155,11 @@ with strategy.scope():
         train_epochs = args.train_epochs
         lr_schedule = WarmUpAndCosineDecay(
             base_lr, global_batch_size, total_training_sample, scale_lr, warmup_epochs, train_epochs)
-
         Optimizer_type = args.optimizer
         optimizers = get_optimizer(lr_schedule, Optimizer_type)
         LARS = optimizers.original_optimizer(args)
         LARS_mix_percision = mixed_precision.LossScaleOptimizer(LARS)
-
-        # ***********************************************
-        # Tracking metrics to measure Loss & Accuracy
-        # ***********************************************
-
-        all_metric = []
-        # Self_Supervised Tracking Metrics
-        contrast_loss_metric = tf.keras.metrics.Mean(
-            name="train/Contrast_loss")
-        contrast_acc_metric = tf.keras.metrics.Mean(name="train/Contrast_acc")
-        all_metric.extend([contrast_loss_metric, contrast_acc_metric])
-
-        # Supervised FineTune Metrics
-        if args.lineareval_while_training:
-            supervised_loss_metric = tf.keras.metrics.Mean(
-                name="train/supervised_loss")
-            supervised_acc_metric = tf.keras.metrics.Mean(
-                name="train/spervised_acc")
-            all_metric.extend([supervised_loss_metric, supervised_acc_metric])
-
-        # Tensorboard Configure
-        current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_dir = 'logs/%s/%s/%s/train' % ("Simclr",
-                                           "ResNet50_Baseline", current_time)
-        summary_writer = tf.summary.create_file_writer(log_dir)
-
-        # Weight&Bias Tracking Experiment
+        # Tracking Experiment
         configs = {
             "Model_Arch": "ResNet50",
             "Training mode": "SSL",
@@ -220,7 +177,7 @@ with strategy.scope():
         wandb.init(project="heuristic_attention_representation_learning",
                    sync_tensorboard=True, config=configs)
 
-        # Configure Multi-training steps
+        # Configure training steps
 
         @tf.function()
         def train_step(ds_one, ds_two):  # (bs, 32, 32, 3), (bs)
@@ -276,10 +233,11 @@ with strategy.scope():
 
             LARS_mix_percision.apply_gradients(zip(
                 all_reduce_fp32_grads, MLP.trainable_variables), experimental_aggregate_gradients=False)
+
             del tape
+
             return loss
 
-        # Configure Strategy Distribute Steps
         @tf.function
         def distributed_train_step(ds_one, ds_two):
             per_replica_losses = strategy.run(
@@ -287,49 +245,84 @@ with strategy.scope():
             return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                                    axis=None)
 
+        # Configure Saving Model --> Chief worker will reponsible for saving model
+        from multiprocessing import util
+
         checkpoint_path = './model_checkpoints/'
-        ckpt = checkpoint(strategy, checkpoint_path)
-        checkpoint_manager_encoder, checkpoint_manager_MLP, write_checkpoint_dir, write_checkpoint_dir_1 = ckpt.checkpoint(
-            resnet_encoder, MLP)
+        checkpoint_dir_encoder = os.path.join(checkpoint_path, 'ckpt')
+        checkpoint_dir_mlp = os.path.join(checkpoint_path, 'MLP_ckpt')
+
+        # Helper Function to define chief worker and saving file
+
+        def _is_chief(task_type, task_id):
+            return task_type is None or task_type == 'chief' or (task_type == 'worker' and
+                                                                 task_id == 0)
+
+        def _get_temp_dir(dirpath, task_id):
+            base_dirpath = 'workertemp_' + str(task_id)
+            temp_dir = os.path.join(dirpath, base_dirpath)
+            tf.io.gfile.makedirs(temp_dir)
+            return temp_dir
+
+        def write_filepath(filepath, task_type, task_id):
+            dirpath = os.path.dirname(filepath)
+            base = os.path.basename(filepath)
+            if not _is_chief(task_type, task_id):
+                dirpath = _get_temp_dir(dirpath, task_id)
+            return os.path.join(dirpath, base)
+
+        # Saving and restore Checkpoint
+        epoch = tf.Variable(initial_value=tf.constant(
+            0, dtype=tf.dtypes.int64), name='epoch')
+        step_in_epoch = tf.Variable(initial_value=tf.constant(0, dtype=tf.dtypes.int64),
+                                    name='step_in_epoch')
+        task_type, task_id = (strategy.cluster_resolver.task_type,
+                              strategy.cluster_resolver.task_id)
+
+        checkpoint_encoder = tf.train.Checkpoint(
+            model=resnet_encoder, epoch=epoch, step_in_epoch=step_in_epoch)
+
+        write_checkpoint_dir = write_filepath(
+            checkpoint_dir_encoder, task_type, task_id)
+
+        write_checkpoint_dir_1 = write_filepath(
+            checkpoint_dir_mlp, task_type, task_id)
+
+        checkpoint_manager_encoder = tf.train.CheckpointManager(
+            checkpoint_encoder, directory=write_checkpoint_dir, max_to_keep=1)
+
+        checkpoint_MLP = tf.train.Checkpoint(
+            model=MLP, epoch=epoch, step_in_epoch=step_in_epoch)
+
+        checkpoint_manager_MLP = tf.train.CheckpointManager(
+            checkpoint_MLP, directory=write_checkpoint_dir_1, max_to_keep=1)
 
         for epoch in range(args.train_epochs):
-
             total_loss = 0.0
             num_batches = 0
-
             for _, (ds_one, ds_two) in enumerate(multi_worker_dataset):
-                total_loss += distributed_train_step(ds_one, ds_two)
-                num_batches += 1
-            train_loss = total_loss/num_batches
-            # Updating Metric Values Here
 
-            # Condition for Logging and Saving Model
+                total_loss += distributed_train_step(
+                    ds_one, ds_two)
+
+                num_batches += 1
+
+            train_loss = total_loss/num_batches
+
             if epoch % 2 == 0:
-                # ************************************
-                # Logging Result with Weight and Bias
-                # ************************************
 
                 wandb.log({
                     "epochs": epoch,
                     "train_loss": train_loss,
                 })
 
-                # ************************************
-                # Logging Result with Tensorflow
-                # ************************************
-                with summary_writer.as_default():
-                    cur_step = epoch+1
-                    metric_updates.log_and_write_metrics_to_summary(
-                        all_metric, cur_step)
-                    summary_writer.flush()
-                # Resent all metric state
-                for metric in all_metric:
-                    metric.reset_states()
-
                 template = ("Epoch {}, Train Loss: {},  ")
                 print(template.format(epoch+1, train_loss,))
 
-                # KERAS Saving Model
+                # Saving the Model
+                checkpoint_manager_encoder.save()
+                checkpoint_manager_MLP.save()
+                # keras saving .h5 format
                 save_path = "./model_checkpoints/h5_format/"
                 # try:
                 #     os.mkdir(save_path)
@@ -339,19 +332,10 @@ with strategy.scope():
                 save_1 = "mlp_" + str(epoch)
                 path_encoder = os.path.join(save_path, save)
                 path_mlp = os.path.join(save_path, save_1)
+
                 resnet_encoder.save_weights(path_encoder)
                 MLP.save_weights(path_mlp)
 
-                # Saving Checkpoint Tensorflow
-                checkpoint_manager_encoder.save()
-                checkpoint_manager_MLP.save()
-
-                task_type, task_id = (
-                    strategy.cluster_resolver.task_type, strategy.cluster_resolver.task_id)
-
-                def _is_chief(task_type, task_id):
-                    return task_type is None or task_type == 'chief' or (task_type == 'worker' and
-                                                                         task_id == 0)
                 if not _is_chief(task_type, task_id):
                     tf.io.gfile.rmtree(write_checkpoint_dir)
                     tf.io.gfile.rmtree(write_checkpoint_dir_1)
