@@ -249,6 +249,7 @@ def rand_distribe_crop_global_local_views_flip(image, crop_size, min_scale, max_
     crp_ratio = crop_size * 1.4 if high_resol else crop_size * 0.8
     image_shape = tf.cast(crp_ratio, dtype=tf.int32)
     image_shape = tf.cast(image_shape, tf.float32)
+
     resz_flp_img = tf.image.resize(flp_img, (image_shape, image_shape))
 
     size = tf.random.uniform(shape=(1,), minval=min_scale*image_shape,
@@ -259,6 +260,40 @@ def rand_distribe_crop_global_local_views_flip(image, crop_size, min_scale, max_
     # Return image with Crop_size
     return tf.image.resize(rnd_flp_crp, (crop_size, crop_size))
 
+
+# Local Croping --Under experiment
+def rand_distribe_crop_global_local_views_flip_v1(image,crop_size, IMG_SIZE):
+    # Random cropping
+    # h_crop = tf.cast(tf.random.uniform(shape=[], minval=50,
+    #                  maxval=224, dtype=tf.int32), tf.float32)
+    
+    # w_crop = h_crop * tf.random.uniform(shape=[], minval=0.5, maxval=1.0)
+
+    h_crop = crop_size * 1.4
+
+    w_crop = crop_size * 1.4 
+    h_crop, w_crop = tf.cast(h_crop, tf.int32), tf.cast(w_crop, tf.int32)
+
+    size = tf.random.uniform(shape=(1,), minval=min_scale*h_crop,
+                             maxval=max_scale*h_crop, dtype=tf.float32)
+    size = tf.cast(size, tf.int32)[0]
+    
+
+    opposite_aspectratio = tf.random.uniform(shape=[])
+
+    if opposite_aspectratio < 0.5:
+        h_crop, w_crop = w_crop, h_crop
+    image = tf.image.random_crop(image, size=[h_crop, w_crop, image.shape[2]])
+
+    # # Horizontal flipping
+    # horizontal_flip = tf.random.uniform(shape=[])
+    # if horizontal_flip < 0.5:
+    #     image = tf.image.random_flip_left_right(image)
+
+    # Resizing to original size
+    image = tf.image.resize(image, size=[crop_size, crop_size])
+    
+    return image
 
 # Inception Style Croping
 def inception_style_croping(image, height, width):
@@ -396,12 +431,18 @@ def simclr_augment_inception_style(image, IMG_SIZE):
 
 def simclr_augment_randcrop_global_view_image_mask(image,mask, IMG_SIZE): 
     
-    stacked_image= tf.concat([image,mask],axis=2)
-   
-    stacked_image= rand_distribe_crop_global_local_views_flip(stacked_image, IMG_SIZE,  min_scale, max_scale, high_resol=True)
-    image= stacked_image[:,:,0:3]
-    mask= stacked_image[:,:,3] 
+    min_scale = 0.5
+    max_scale = 1.0
 
+    # stacked_image= tf.concat([image,mask],axis=2)
+    # print(stacked_image.shape)
+   
+    #stacked_image= rand_distribe_crop_global_local_views_flip(stacked_image, IMG_SIZE,  min_scale, max_scale, high_resol=True)
+    # image= stacked_image[:,:,0:3]
+    # mask= stacked_image[:,:,3] 
+    image=rand_distribe_crop_global_local_views_flip(image, IMG_SIZE,  min_scale, max_scale, high_resol=True)
+    mask=  rand_distribe_crop_global_local_views_flip(mask, IMG_SIZE,  min_scale, max_scale, high_resol=True)
+    # image= stacked_image[:,:,0:3]
     image= random_apply(color_jitter, p=0.8, x= image, )
     image= random_apply(color_drop,p=0.2, x=image, )
     image= random_apply(random_blur, p=1.0, x= image,)
@@ -413,11 +454,13 @@ def simclr_augment_inception_style_image_mask(image,mask, IMG_SIZE):
     # transformations (except for random crops) need to be applied
     # randomly to impose translational invariance. (Two Options implementation)
     #image= flip_random_crop(image, crop_size)
-    stacked_image= tf.concat([image,mask],axis=2)
+    # stacked_image= tf.concat([image,mask],axis=2)
 
-    stacked_image = inception_style_croping(image, IMG_SIZE, IMG_SIZE)
-    image= stacked_image[:,:,0:3]
-    mask= stacked_image[:,:,3] 
+    # stacked_image = inception_style_croping(stacked_image, IMG_SIZE, IMG_SIZE)
+    # image= stacked_image[:,:,0:3]
+    # mask= stacked_image[:,:,3] 
+    image =inception_style_croping(image, IMG_SIZE, IMG_SIZE)
+    mask =inception_style_croping(mask, IMG_SIZE, IMG_SIZE)
     image = random_apply(color_jitter, p=0.8, x=image, )
     image = random_apply(color_drop, p=0.2, x=image, )
     image = random_apply(random_blur, p=1.0, x=image,)
