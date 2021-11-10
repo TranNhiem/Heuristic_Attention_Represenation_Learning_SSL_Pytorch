@@ -182,49 +182,36 @@ def nt_xent_symmetrize_keras(p, z, temperature):
 
 '''Binary mask Loss with Nt-Xent Loss # SYMMETRIZED Loss'''
 
-def binary_mask_nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
+def binary_mask_nt_xent_asymetrize_loss(v1_object,v2_object,v1_background, v2_background, temperature):  # negative_mask
     # L2 Norm
-    batch_size = tf.shape(p)[0]
-    sess = tf.compat.v1.Session()
-    batch_size = sess.run(batch_size)
+    batch_size = tf.shape(v1_object)[0]
+    v1_object = tf.math.l2_normalize(v1_object, -1)
+    v2_object = tf.math.l2_normalize(v2_object, -1)
+    v1_background = tf.math.l2_normalize(v1_background, -1)
+    v2_background = tf.math.l2_normalize(v2_background, -1)
+    INF = np.inf
+
     labels = tf.one_hot(tf.range(batch_size), batch_size * 2)
     masks = tf.one_hot(tf.range(batch_size), batch_size)
 
-    p_l2 = tf.math.l2_normalize(p, axis=1)
-    z_l2 = tf.math.l2_normalize(z, axis=1)
+    #object sim
+    logits_o_aa = tf.matmul(v1_object, v1_object, transpose_b=True) / temperature
+    logits_o_aa = logits_o_aa - masks * INF# remove the same samples
+    logits_o_bb = tf.matmul(v2_object, v2_object, transpose_b=True) / temperature
+    logits_o_bb = logits_o_bb - masks * INF# remove the same samples
+    #background sim
+    logits_b_aa = tf.matmul(v1_background, v1_background, transpose_b=True) / temperature
+    logits_b_aa = logits_b_aa - masks * INF# remove the same samples
+    logits_b_bb = tf.matmul(v2_background, v2_background, transpose_b=True) / temperature
+    logits_b_bb = logits_b_bb - masks * INF# remove the same samples
 
-    # Cosine Similarity distance loss
+    #object disim
+    logits_o_ab = tf.matmul(v1_object, v2_object, transpose_b=True) / temperature
+    logits_o_ba = tf.matmul(v2_object, v1_object, transpose_b=True) / temperature
+    #background disim
+    logits_b_ab = tf.matmul(v1_background, v2_background, transpose_b=True) / temperature
+    logits_b_ba = tf.matmul(v2_background, v1_background, transpose_b=True) / temperature
 
-    # pos_loss = consie_sim_1d(p_l2, z_l2)
-    pos_loss = tf.matmul(tf.expand_dims(p_l2, 1), tf.expand_dims(z_l2, 2))
-
-    pos_loss = (tf.reshape(pos_loss, (batch_size, 1)))/temperature
-
-    negatives = tf.concat([p_l2, z_l2], axis=0)
-    # Mask out the positve mask from batch of Negative sample
-    negative_mask = get_negative_mask(batch_size)
-
-    loss = 0
-    for positives in [p_l2, z_l2]:
-
-        # negative_loss = cosine_sim_2d(positives, negatives)
-        negative_loss = tf.tensordot(tf.expand_dims(
-            positives, 1), tf.expand_dims(tf.transpose(negatives), 0), axes=2)
-        l_labels = tf.zeros(batch_size, dtype=tf.int32)
-        l_neg = tf.boolean_mask(negative_loss, negative_mask)
-
-        l_neg = tf.reshape(l_neg, (batch_size, -1))
-        l_neg /= temperature
-
-        logits = tf.concat([pos_loss, l_neg], axis=1)  # [N, K+1]
-        tf.keras.losses.SparseCategoricalCrossentropy()
-        loss_ = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True, reduction=tf.keras.losses.Reduction.SUM)
-        loss += loss_(y_pred=logits, y_true=l_labels)
-
-    loss = loss/(2*batch_size)
-
-    return loss
 
 ######################################################################################
 '''NONE CONTRASTIVE LOSS'''
