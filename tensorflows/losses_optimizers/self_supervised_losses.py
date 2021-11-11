@@ -35,7 +35,6 @@ def multi_class_npair_loss_temperature(z, y, temperature):
 
 '''N-Pair Loss'''
 
-
 def multiclass_N_pair_loss(p, z):
     x_i = tf.math.l2_normalize(p, axis=1)
     x_j = tf.math.l2_normalize(z, axis=1)
@@ -53,12 +52,31 @@ def multiclass_N_pair_loss(p, z):
     return (loss_1_2+loss_2_1)/2
 
 
-'''SimCLR Paper Nt-Xent Loss # ASYMETRIC Loss'''
+'''SimCLR Paper Nt-Xent Loss Keras Version'''
+# Nt-Xent Loss Symmetrized
+def nt_xent_symmetrize_keras(p, z, temperature):
+    # cosine similarity the dot product of p,z two feature vectors
+    x_i = tf.math.l2_normalize(p, axis=1)
+    x_j = tf.math.l2_normalize(z, axis=1)
+    similarity = (tf.matmul(x_i, x_j, transpose_b=True)/temperature)
+    # the similarity from the same pair should be higher than other views
+    batch_size = tf.shape(p)[0]  # Number Image within batch
+    contrastive_labels = tf.range(batch_size)
+
+    # Simlarilarity treat as logic input for Cross Entropy Loss
+    # Why we need the Symmetrized version Here??
+    loss_1_2 = tf.keras.losses.sparse_categorical_crossentropy(
+        contrastive_labels, similarity, from_logits=True,)  # reduction=tf.keras.losses.Reduction.SUM
+    loss_2_1 = tf.keras.losses.sparse_categorical_crossentropy(
+        contrastive_labels, tf.transpose(similarity), from_logits=True, )
+    return (loss_1_2 + loss_2_1) / 2
+
+
+'''SimCLR Paper Nt-Xent Loss # SYMETRIC Loss'''
 # Nt-Xent ---> N_Pair loss with Temperature scale
-# Nt-Xent Loss (Remember in this case dataset two image stacked)
+# Nt-Xent Loss (Remember in this case Concatenate Two Tensor Together)
 
-
-def nt_xent_asymetrize_loss(z,  temperature):
+def nt_xent_symetrize_loss_v1(z,  temperature):
     '''The issue of design this loss two image is in one array
     when we multiply them that will lead two two same things mul together???
 
@@ -88,6 +106,7 @@ def nt_xent_asymetrize_loss(z,  temperature):
         tf.multiply(negative_mask, similarity), axis=1)
 
     losses = -tf.math.log(numerator/denominators)
+
     return tf.reduce_mean(losses)
 
 
@@ -95,28 +114,26 @@ def nt_xent_asymetrize_loss(z,  temperature):
 
 # Mask to remove the positive example from the rest of Negative Example
 
-
 def get_negative_mask(batch_size):
     # return a mask that removes the similarity score of equal/similar images
     # Ensure distinct pair of image get their similarity scores
     # passed as negative examples
+    batch_size=batch_size.numpy()
     negative_mask = np.ones((batch_size, 2 * batch_size), dtype=bool)
     for i in range(batch_size):
         negative_mask[i, i] = 0
         negative_mask[i, i+batch_size] = 0
-
     return tf.constant(negative_mask)
-
 
 consie_sim_1d = tf.keras.losses.CosineSimilarity(
     axis=1, reduction=tf.keras.losses.Reduction.NONE)
 cosine_sim_2d = tf.keras.losses.CosineSimilarity(
     axis=2, reduction=tf.keras.losses.Reduction.NONE)
 
-
 def nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
     # L2 Norm
     batch_size = tf.shape(p)[0]
+    batch_size=tf.cast(batch_size, tf.int32)
     labels = tf.one_hot(tf.range(batch_size), batch_size * 2)
     masks = tf.one_hot(tf.range(batch_size), batch_size)
 
@@ -133,7 +150,7 @@ def nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
     negatives = tf.concat([p_l2, z_l2], axis=0)
     # Mask out the positve mask from batch of Negative sample
     negative_mask = get_negative_mask(batch_size)
-    
+
     loss = 0
     for positives in [p_l2, z_l2]:
 
@@ -151,32 +168,60 @@ def nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
         loss_ = tf.keras.losses.SparseCategoricalCrossentropy(
             from_logits=True, reduction=tf.keras.losses.Reduction.SUM)
         loss += loss_(y_pred=logits, y_true=l_labels)
-
+    batch_size=tf.cast(batch_size, tf.float32)
     loss = loss/(2*batch_size)
 
     return loss
 
+def nt_xent_symetrize_loss_simcrl(hidden1, hidden2, LARGE_NUM, 
+                         hidden_norm=True,
+                         temperature=1.0,
+                         ):
+    """Compute loss for model.
 
-'''SimCLR Paper Nt-Xent Loss # SYMMETRIZED Loss'''
-# Nt-Xent Loss Symmetrized
+    Args:
+      hidden: hidden vector (`Tensor`) of shape (bsz, dim).
+      hidden_norm: whether or not to use normalization on the hidden vector.
+      temperature: a `floating` number for temperature scaling.
+      
+    Returns:
+      A loss scalar.
+      The logits for contrastive prediction task.
+      The labels for contrastive prediction task.
+    """
+    # Get (normalized) hidden1 and hidden2.
+    if hidden_norm:
+        hidden1 = tf.math.l2_normalize(hidden1, -1)  # 1
+        hidden1 = tf.math.l2_normalize(hidden1, -1)
+    #hidden1, hidden2 = tf.split(hidden, 2, 0)
+    batch_size = tf.shape(hidden1)[0]
+
+ 
+    hidden1_large = hidden1
+    hidden2_large = hidden2
+    labels = tf.one_hot(tf.range(batch_size), batch_size * 2)
+    masks = tf.one_hot(tf.range(batch_size), batch_size)
+
+    logits_aa = tf.matmul(hidden1, hidden1_large,
+                          transpose_b=True) / temperature
+    logits_aa = logits_aa - masks * LARGE_NUM
+    logits_bb = tf.matmul(hidden2, hidden2_large,
+                          transpose_b=True) / temperature
+    logits_bb = logits_bb - masks * LARGE_NUM
+    logits_ab = tf.matmul(hidden1, hidden2_large,
+                          transpose_b=True) / temperature
+    logits_ba = tf.matmul(hidden2, hidden1_large,
+                          transpose_b=True) / temperature
+
+    loss_a = tf.nn.softmax_cross_entropy_with_logits(
+        labels, tf.concat([logits_ab, logits_aa], 1))
+    loss_b = tf.nn.softmax_cross_entropy_with_logits(
+        labels, tf.concat([logits_ba, logits_bb], 1))
+    loss = tf.reduce_mean(loss_a + loss_b)
+
+    return loss, logits_ab, labels
 
 
-def nt_xent_symmetrize_keras(p, z, temperature):
-    # cosine similarity the dot product of p,z two feature vectors
-    x_i = tf.math.l2_normalize(p, axis=1)
-    x_j = tf.math.l2_normalize(z, axis=1)
-    similarity = (tf.matmul(x_i, x_j, transpose_b=True)/temperature)
-    # the similarity from the same pair should be higher than other views
-    batch_size = tf.shape(p)[0]  # Number Image within batch
-    contrastive_labels = tf.range(batch_size)
-
-    # Simlarilarity treat as logic input for Cross Entropy Loss
-    # Why we need the Symmetrized version Here??
-    loss_1_2 = tf.keras.losses.sparse_categorical_crossentropy(
-        contrastive_labels, similarity, from_logits=True,)  # reduction=tf.keras.losses.Reduction.SUM
-    loss_2_1 = tf.keras.losses.sparse_categorical_crossentropy(
-        contrastive_labels, tf.transpose(similarity), from_logits=True, )
-    return (loss_1_2 + loss_2_1) / 2
 
 '''Binary mask Loss with Nt-Xent Loss # SYMMETRIZED Loss'''
 
@@ -213,12 +258,12 @@ def binary_mask_nt_xent_asymetrize_loss(v1_object,v2_object,v1_background, v2_ba
     logits_b_ab = tf.matmul(v1_background, v2_background, transpose_b=True) / temperature
     logits_b_ba = tf.matmul(v2_background, v1_background, transpose_b=True) / temperature
     # print(masks)
-    print(logits_o_aa.shape)
-    print(logits_o_bb.shape)
-    print(logits_b_aa.shape)
-    print(logits_b_bb.shape)
-    print(logits_o_ab.shape)
-    print(logits_o_ba.shape)
+    # print(logits_o_aa.shape)
+    # print(logits_o_bb.shape)
+    # print(logits_b_aa.shape)
+    # print(logits_b_bb.shape)
+    # print(logits_o_ab.shape)
+    # print(logits_o_ba.shape)
 
     loss_a = tf.nn.softmax_cross_entropy_with_logits( labels, tf.concat([alpha * logits_o_ab + (1-alpha)*logits_b_ab, alpha * logits_o_aa + alpha * logits_b_aa], 1))
     loss_b = tf.nn.softmax_cross_entropy_with_logits( labels, tf.concat([alpha * logits_o_ba + (1-alpha)*logits_b_ba, alpha * logits_o_bb + alpha * logits_b_bb], 1))
