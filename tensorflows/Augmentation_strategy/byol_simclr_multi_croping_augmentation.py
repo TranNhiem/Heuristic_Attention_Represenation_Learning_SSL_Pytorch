@@ -448,6 +448,7 @@ def simclr_augment_randcrop_global_view_image_mask(image,mask, IMG_SIZE):
     image= random_apply(random_blur, p=1.0, x= image,)
     return image, mask
 
+
 def simclr_augment_inception_style_image_mask(image,mask, IMG_SIZE):
     # IMG_SIZE=IMG_SIZE
     # As discussed in the SimCLR paper, the series of augmentation
@@ -459,8 +460,8 @@ def simclr_augment_inception_style_image_mask(image,mask, IMG_SIZE):
     # stacked_image = inception_style_croping(stacked_image, IMG_SIZE, IMG_SIZE)
     # image= stacked_image[:,:,0:3]
     # mask= stacked_image[:,:,3] 
-    image =inception_style_croping(image, IMG_SIZE, IMG_SIZE)
-    mask =inception_style_croping(mask, IMG_SIZE, IMG_SIZE)
+    image = inception_style_croping(image, IMG_SIZE, IMG_SIZE)
+    mask = inception_style_croping(mask, IMG_SIZE, IMG_SIZE)
     image = random_apply(color_jitter, p=0.8, x=image, )
     image = random_apply(color_drop, p=0.2, x=image, )
     image = random_apply(random_blur, p=1.0, x=image,)
