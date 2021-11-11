@@ -117,8 +117,6 @@ cosine_sim_2d = tf.keras.losses.CosineSimilarity(
 def nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
     # L2 Norm
     batch_size = tf.shape(p)[0]
-    sess = tf.compat.v1.Session()
-    batch_size = sess.run(batch_size)
     labels = tf.one_hot(tf.range(batch_size), batch_size * 2)
     masks = tf.one_hot(tf.range(batch_size), batch_size)
 
@@ -135,7 +133,7 @@ def nt_xent_asymetrize_loss_v2(p, z, temperature):  # negative_mask
     negatives = tf.concat([p_l2, z_l2], axis=0)
     # Mask out the positve mask from batch of Negative sample
     negative_mask = get_negative_mask(batch_size)
-
+    
     loss = 0
     for positives in [p_l2, z_l2]:
 
