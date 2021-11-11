@@ -9,8 +9,10 @@ Original file is located at
 # Heuristic Attention Model
 """
 
-import tensorflow.compat.v2 as tf
+import v2 as tf
 import matplotlib.pyplot as plt
+
+
 class Flags():
   def __init__(self):
       self.batch_norm_decay = 0.9
