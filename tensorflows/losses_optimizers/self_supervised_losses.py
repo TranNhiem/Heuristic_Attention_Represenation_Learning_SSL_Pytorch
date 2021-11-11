@@ -192,7 +192,7 @@ def nt_xent_symetrize_loss_simcrl(hidden1, hidden2, LARGE_NUM,
     # Get (normalized) hidden1 and hidden2.
     if hidden_norm:
         hidden1 = tf.math.l2_normalize(hidden1, -1)  # 1
-        hidden1 = tf.math.l2_normalize(hidden1, -1)
+        hidden2 = tf.math.l2_normalize(hidden2, -1)
     #hidden1, hidden2 = tf.split(hidden, 2, 0)
     batch_size = tf.shape(hidden1)[0]
 
