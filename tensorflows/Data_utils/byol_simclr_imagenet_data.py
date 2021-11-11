@@ -13,7 +13,8 @@ FLAGS = flags.FLAGS
 
 class imagenet_dataset_single_machine():
 
-    def __init__(self, img_size, train_batch, val_batch, strategy, img_path=None, x_val=None, x_train=None,bi_mask=True):
+    def __init__(self, img_size, train_batch, val_batch, strategy, 
+    img_path=None, x_val=None, x_train=None,bi_mask=True):
         '''
         args: 
         IMG_SIZE: Image training size 
@@ -81,7 +82,7 @@ class imagenet_dataset_single_machine():
             self.x_val = self.dataset_shuffle[0:50000]
             self.x_train = self.dataset_shuffle[50000:]
 
-        if self.bi_mask is not None: 
+        if bi_mask: 
 
             self.x_train_image_mask= np.stack((np.array(self.x_train), np.array(self.bi_mask)), axis=-1)
             print(self.x_train_image_mask.shape)
