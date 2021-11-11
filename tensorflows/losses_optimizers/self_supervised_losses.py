@@ -196,7 +196,6 @@ def nt_xent_symetrize_loss_simcrl(hidden1, hidden2, LARGE_NUM,
     #hidden1, hidden2 = tf.split(hidden, 2, 0)
     batch_size = tf.shape(hidden1)[0]
 
- 
     hidden1_large = hidden1
     hidden2_large = hidden2
     labels = tf.one_hot(tf.range(batch_size), batch_size * 2)

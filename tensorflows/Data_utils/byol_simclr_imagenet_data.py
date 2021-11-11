@@ -31,9 +31,8 @@ class imagenet_dataset_single_machine():
         self.seed = 26 #FLAGS.SEED
         self.x_train = x_train
         self.x_val = x_val
-
+        self.bi_mask=[]
         if bi_mask:
-            self.bi_mask=[]
             for p in self.x_train:
                 self.bi_mask.append(p.replace("1K/", "binary_image_by_USS/").replace("JPEG","png"))
        
