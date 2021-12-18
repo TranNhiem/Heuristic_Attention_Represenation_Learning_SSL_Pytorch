@@ -16,7 +16,7 @@ import os, threading
 def generate(dataset_root_path='/data/1Knew/train', root_write_path='/data/1Knew/FH_binary'):
     subfolder_names = [x for x in os.listdir(dataset_root_path) if '.' not in x]
     # subfolder_names = subfolder_names[:334]
-    for num in range(334, 667, 2):
+    for num in range(0, 1000, 2):
         subfolder_threads = []
         subfolder_to_run = [subfolder_names[num], subfolder_names[num + 1]]
         print(num , ' , ' , subfolder_to_run)
