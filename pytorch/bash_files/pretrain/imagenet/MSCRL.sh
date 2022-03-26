@@ -1,0 +1,43 @@
+python3 ../../../main_pretrain.py \
+    --dataset imagenet_with_mask \
+    --backbone resnet50_MNCRL \
+    --data_dir /data1/1K_New/ \
+    --train_dir train \
+    --val_dir val \
+    --mask_dir train_binary_mask_by_USS \
+    --max_epochs 100 \
+    --gpus 0,1,2,3,4,5,6,7\
+    --accelerator gpu \
+    --strategy ddp \
+    --sync_batchnorm \
+    --precision 16 \
+    --optimizer sgd \
+    --lars \
+    --grad_clip_lars \
+    --eta_lars 0.02 \
+    --exclude_bias_n_norm \
+    --scheduler warmup_cosine \
+    --lr 0.3 \
+    --accumulate_grad_batches 1 \
+    --weight_decay 1e-4 \
+    --batch_size 512 \
+    --num_workers 40 \
+    --brightness 0.8 \
+    --contrast 0.8 \
+    --saturation 0.8 \
+    --hue 0.2 \
+    --num_crops_per_aug 2 \
+    --name mscrl-100ep-imagenet \
+    --project solo \
+    --entity mlbrl \
+    --wandb \
+    --save_checkpoint \
+    --method mscrl \
+    --temperature 0.2 \
+    --proj_hidden_dim 2048 \
+    --checkpoint_dir /data1/solo_ckpt \
+    --checkpoint_frequency 10 \
+    --alpha cosine_schedule \
+    --beta cosine_schedule \
+    --loss_type byol+f_loss \
+    --encoder_width 1 \

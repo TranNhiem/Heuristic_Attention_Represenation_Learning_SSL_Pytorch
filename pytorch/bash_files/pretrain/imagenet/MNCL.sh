@@ -1,0 +1,50 @@
+python3 ../../../main_pretrain.py \
+    --dataset imagenet_with_mask \
+    --backbone resnet50_MNCRL \
+    --data_dir /data1/1K_New/ \
+    --train_dir train \
+    --val_dir val \
+    --mask_dir train_binary_mask_by_USS \
+    --max_epochs 100 \
+    --gpus 0,1,2,3,4,5,6,7\
+    --accelerator gpu \
+    --strategy ddp \
+    --sync_batchnorm \
+    --precision 16 \
+    --optimizer sgd \
+    --lars \
+    --eta_lars 0.001 \
+    --exclude_bias_n_norm \
+    --scheduler warmup_cosine \
+    --lr 0.5 \
+    --accumulate_grad_batches 1 \
+    --classifier_lr 0.2 \
+    --weight_decay 1e-6 \
+    --batch_size 512 \
+    --num_workers 40 \
+    --brightness 0.4 \
+    --contrast 0.4 \
+    --saturation 0.2 \
+    --hue 0.1 \
+    --crop_style Mask_boxes Mask_boxes \
+    --gaussian_prob 1.0 0.1 \
+    --solarization_prob 0.0 0.2 \
+    --num_crops_per_aug 1 1 \
+    --name byol+loss_f-lr0.5-beta_cosine_V2-beta_schedule-resnet50-imagenet-100ep-mask-cropping0.2-mask-pooling \
+    --entity mlbrl \
+    --project solo \
+    --wandb \
+    --save_checkpoint \
+    --method mncrl \
+    --proj_output_dim 256 \
+    --proj_hidden_dim 4096 \
+    --pred_hidden_dim 4096 \
+    --base_tau_momentum 0.99 \
+    --final_tau_momentum 1.0 \
+    --momentum_classifier \
+    --checkpoint_dir /data1/solo_ckpt \
+    --checkpoint_frequency 10 \
+    --alpha cosine_schedule \
+    --beta cosine_schedule \
+    --loss_type byol+f_loss \
+    --encoder_width 1 \

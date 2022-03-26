@@ -1,3 +1,0 @@
-'''
-Implementation SimCLR Augmentation Strategy
-'''

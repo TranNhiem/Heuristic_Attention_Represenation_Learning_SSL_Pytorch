@@ -1,3 +1,0 @@
-'''
-Implementation RandAug Augmentation strategy
-'''
