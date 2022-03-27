@@ -9,8 +9,6 @@ from torchvision.models import resnet50
 from downstream_modules import DownstreamDataloader, DownstreamLinearModule
 from config_training import *
 
-
-
 kwargs = {
     "num_classes": 1000,
     "cifar": False,
