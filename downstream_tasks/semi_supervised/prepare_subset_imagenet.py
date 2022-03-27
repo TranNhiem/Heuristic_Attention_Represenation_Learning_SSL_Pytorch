@@ -12,7 +12,7 @@ for class_name in class_names:
     if not os.path.exists(os.path.join(ten_per_path, class_name)):
         os.mkdir(os.path.join(ten_per_path, class_name))
 
-with open('/code_spec/downstream_tasks/one_per.txt', 'r') as f:
+with open('/downstream_tasks/semi_supervised/subset_ImageNet_1k/1percent.txt', 'r') as f:
     one_per_images = f.readlines()
     for image in one_per_images:
         image = image[:-1]
@@ -22,7 +22,7 @@ with open('/code_spec/downstream_tasks/one_per.txt', 'r') as f:
         if not os.path.exists(dest_path) and os.path.exists(src_path):
             shutil.copyfile(src_path, dest_path)
 
-with open('/code_spec/downstream_tasks/ten_per.txt', 'r') as f:
+with open('/downstream_tasks/semi_supervised/subset_ImageNet_1k/10percent.txt', 'r') as f:
     ten_per_images = f.readlines()
     for image in ten_per_images:
         image = image[:-1]

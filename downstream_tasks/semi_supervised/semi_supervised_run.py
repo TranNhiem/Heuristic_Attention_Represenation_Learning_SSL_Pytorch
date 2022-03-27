@@ -6,7 +6,8 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.plugins import DDPPlugin
 from torchvision.models import resnet50
-from downstream_modules import DownstreamDataloader, DownstreamLinearModule
+from ..downstream_dataloader import DownstreamDataloader, 
+from ..downstream_linear_finetune_model import DownstreamLinearModule
 from config_training import *
 
 kwargs = {
