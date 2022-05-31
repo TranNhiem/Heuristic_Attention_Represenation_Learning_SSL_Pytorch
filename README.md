@@ -126,11 +126,11 @@ Set the `checkpoint` to those that are only pre-trained but not fine-tuned. Give
 (Feel free to share your implementation by creating an issue)
 
 Implementations in Pytorch Lightning:
-* [Our Official Implementation]([https://github.com/TranNhiem/Heuristic_Attention_Represenation_Learning_SSL_Pytorch])
+* [Official Implementation](https://github.com/TranNhiem/Heuristic_Attention_Represenation_Learning_SSL_Pytorch)
 
 
 Implementations in Tensorflow 2:
-* [Our Official Implementation]([https://github.com/TranNhiem/Heuristic_At- 432 tention_Representation_Learning_SSL_Tensorflow])
+* [Official Implementation](https://github.com/TranNhiem/Heuristic_Attention_Representation_Learning_SSL_Tensorflow)
 
 
 ## Known issues
