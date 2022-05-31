@@ -5,7 +5,7 @@
 <span style="color: red"><strong>News! </strong></span> Colabs for <a href="">Intriguing Properties of Contrastive Losses</a> are added, see <a href="">here</a>.
 
 <div align="center">
-  <img width="50%" alt="SimCLR Illustration" src="https://1.bp.blogspot.com/--vH4PKpE9Yo/Xo4a2BYervI/AAAAAAAAFpM/vaFDwPXOyAokAC8Xh852DzOgEs22NhbXwCLcBGAsYHQ/s1600/image4.gif">
+  <img width="50%" alt="HARL Framework Illustration" src="images/MA_SSRL_framework.png">
 </div>
 <div align="center">
   An illustration of HARL Framework (from <a href="https://ai.googleblog.com/2020/04/advancing-self-supervised-and-semi.html">our blog here</a>).
@@ -29,7 +29,7 @@ These checkpoints are stored in Google Drive Storage:
 
 We also provide examples on how to use the checkpoints in `colabs/` folder.
 
-## Pre-trained models for SimCLRv1
+## HARL Pre-trained models
 
 The pre-trained models (base network with linear classifier layer) can be found below. Note that for these SimCLRv1 checkpoints, the projection head is not available.
 
