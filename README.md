@@ -21,31 +21,6 @@ Detail of implementation (FH, MCG,FastMCG, DRFI )
 
 Detail of implementation (DeepMask, DeepLabV3, others ) 
 
-### **SECTION 2  Implement DataAugmentation Two Views and Multi-Views** 
-
-+ Standard Implement SimCLR + BYOL Augmentation strategy
-GoogleColab Notebook Implementation [SimCLR_Augmentation](https://colab.research.google.com/drive/1Xsh3O8NYxUcUcBy3avJbqrWcpcg-6uid?authuser=2)
-
-+ Implementation Multi-View Augmentation Strategy SwAV (Global + Local Views)
-
-### **SECTION 3 Neural Net Architecture**
-+ Under Development
-
-
-### **SECTION 4 Multi-Objectives Self-Superivsed Framework**
-
-+ Heuristic Attention Contrastive frameworks Implementation Include three different approaches 
-
-+ Conventional Contrastive Framework
-
-<img src="images/conventional_contrastive.jpg"  width="25%">
-
-+ Binary Contrastive Framework based on binary segmentation mask
-
-<img src="images/Binary_contrastive_framework.png" width="50%">
-
-+ Semantic Contrastive Framework based on Semantic segmentation mask
-
 <img src="images/semantic_contrastive_framework.jpg"  width="50%">
 
 
