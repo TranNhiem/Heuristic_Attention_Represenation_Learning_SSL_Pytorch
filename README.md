@@ -1,14 +1,14 @@
 # HARL - Heuristic Attention Representation Learning for Self-Supervised of Visual Representations
 
-<span style="color: red"><strong>News! </strong></span> We have released a Pytorch Lightning implementation of HAR; (along with converted checkpoints), they are in <a href="tf2/">tf2/ folder</a>.
+<span style="color: red"><strong> </strong></span> We have released a Pytorch Lightning implementation; (along with checkpoints)</a>.
 
-<span style="color: red"><strong>News! </strong></span> Colabs for <a href="">Intriguing Properties of Contrastive Losses</a> are added, see <a href="">here</a>.
+<span style="color: red"><strong> </strong></span> Colabs for <a href=""> HARL framework </a> are added, see <a href="">here</a>.
 
 <div align="center">
-  <img width="50%" alt="HARL Framework Illustration" src="images/MA_SSRL_framework.png">
+  <img width="50%" alt="HARL Framework Illustration" src="images/HARL_framework.png">
 </div>
 <div align="center">
-  An illustration of HARL Framework (from <a href="https://ai.googleblog.com/2020/04/advancing-self-supervised-and-semi.html">our blog here</a>).
+  An illustration of HARL Framework (from <a href="https://www.hh-ri.com/2022/05/30/heuristic-attention-representation-learning-for-self-supervised-pretraining/">our blog here</a>).
 </div>
 
 ## HARL Pre-trained models  
@@ -24,14 +24,12 @@ We opensourced total 4 pretrained models here, corresponding to those in Table 1
 
 These checkpoints are stored in Google Drive Storage:
 
-* Pretrained ResNet50 models (with linear eval head): [gs://simclr-checkpoints/simclrv2/pretrained](https://console.cloud.google.com/storage/browser/simclr-checkpoints/simclrv2/pretrained)
-
 
 We also provide examples on how to use the checkpoints in `colabs/` folder.
 
 ## HARL Pre-trained models
 
-The pre-trained models (base network with linear classifier layer) can be found below. Note that for these SimCLRv1 checkpoints, the projection head is not available.
+The pre-trained models (base network with linear classifier layer) can be found below.
 
 |                             Model checkpoint and hub-module                             |     ImageNet Top-1     |
 |-----------------------------------------------------------------------------------------|------------------------|
@@ -77,7 +75,7 @@ python run.py --mode=train_then_eval --train_mode=finetune \
   --global_bn=False --optimizer=momentum --learning_rate=0.1 --weight_decay=0.0 \
   --train_epochs=100 --train_batch_size=512 --warmup_epochs=0 \
   --dataset=cifar10 --image_size=32 --eval_split=test --resnet_depth=18 \
-  --checkpoint=/tmp/simclr_test --model_dir=/tmp/simclr_test_ft --use_tpu=False
+
 ```
 As a reference, the above runs on CIFAR-10 should give you around 91% accuracy, though it can be further optimized.
 
