@@ -1,4 +1,4 @@
-# HARL - Heuristic Attention Representation Learning for Self-Supervised of Visual Representations
+# HARL - Heuristic Attention Representation Learning for Self-Supervised Pretraining
 
 <span style="color: red"><strong> </strong></span> We have released a Pytorch Lightning implementation; (along with checkpoints)</a>.
 
