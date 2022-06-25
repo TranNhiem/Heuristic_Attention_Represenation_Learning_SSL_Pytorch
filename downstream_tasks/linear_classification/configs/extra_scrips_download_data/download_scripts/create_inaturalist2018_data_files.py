@@ -21,8 +21,8 @@ import sys
 
 import numpy as np
 from iopath.common.file_io import g_pathmgr
-from solo.utils.download import download_and_extract_archive
-from solo.utils.io import save_file
+from HARL.utils.download import download_and_extract_archive
+from HARL.utils.io import save_file
 
 
 # Initiate the logger

@@ -18,7 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import argparse
-from solo.args.dataset import dataset_args, augmentations_args
+from HARL.args.dataset import dataset_args, augmentations_args
 
 
 def test_argparse_dataset():

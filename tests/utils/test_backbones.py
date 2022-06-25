@@ -18,7 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from solo.utils.backbones import (
+from HARL.utils.backbones import (
     poolformer_m36,
     poolformer_m48,
     poolformer_s12,

@@ -18,7 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from solo.losses import byol_loss_func
+from HARL.losses import byol_loss_func
 
 
 def test_byol_loss():

@@ -8,8 +8,8 @@ import os
 import shutil
 
 from tqdm import tqdm
-from solo.utils.download import download_and_extract_archive
-from solo.utils.io import cleanup_dir
+from HARL.utils.download import download_and_extract_archive
+from HARL.utils.io import cleanup_dir
 
 
 def get_argument_parser():

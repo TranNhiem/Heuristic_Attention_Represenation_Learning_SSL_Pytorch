@@ -17,7 +17,7 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from solo.utils.dali_dataloader import (
+from HARL.utils.dali_dataloader import (
     PretrainPipeline,
     ImagenetTransform,
     NormalPipeline,

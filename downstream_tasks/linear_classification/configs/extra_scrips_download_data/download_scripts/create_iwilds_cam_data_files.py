@@ -9,8 +9,8 @@ import os
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from solo.utils.download import download_and_extract_archive
-from solo.utils.io import save_file
+from HARL.utils.download import download_and_extract_archive
+from HARL.utils.io import save_file
 
 
 def get_argument_parser():

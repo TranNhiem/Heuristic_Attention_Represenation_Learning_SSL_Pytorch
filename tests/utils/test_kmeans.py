@@ -1,5 +1,5 @@
 import torch
-from solo.utils.kmeans import KMeans
+from HARL.utils.kmeans import KMeans
 
 
 def test_kmeans():

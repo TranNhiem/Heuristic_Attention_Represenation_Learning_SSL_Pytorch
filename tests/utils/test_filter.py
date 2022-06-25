@@ -21,7 +21,7 @@ import math
 
 import torch
 import torch.nn as nn
-from solo.utils.misc import FilterInfNNan, filter_inf_n_nan
+from HARL.utils.misc import FilterInfNNan, filter_inf_n_nan
 
 
 def test_filter():

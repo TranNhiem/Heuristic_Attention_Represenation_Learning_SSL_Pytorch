@@ -26,9 +26,9 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 from torchvision.models import resnet18, resnet50
 
-from solo.args.setup import parse_args_linear
-from solo.methods.base import BaseMethod
-from solo.utils.backbones import (
+from HARL.args.setup import parse_args_linear
+from HARL.methods.base import BaseMethod
+from HARL.utils.backbones import (
     swin_base,
     swin_large,
     swin_small,
@@ -40,16 +40,16 @@ from solo.utils.backbones import (
 )
 
 try:
-    from solo.methods.dali import ClassificationABC
+    from HARL.methods.dali import ClassificationABC
 except ImportError:
     _dali_avaliable = False
 else:
     _dali_avaliable = True
 import types
 
-from solo.methods.linear import LinearModel
-from solo.utils.checkpointer import Checkpointer
-from solo.utils.classification_dataloader import prepare_data
+from HARL.methods.linear import LinearModel
+from HARL.utils.checkpointer import Checkpointer
+from HARL.utils.classification_dataloader import prepare_data
 
 
 def main():

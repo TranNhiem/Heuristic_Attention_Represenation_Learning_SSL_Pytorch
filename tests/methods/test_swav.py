@@ -22,7 +22,7 @@ import argparse
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning import Trainer
-from solo.methods import SwAV
+from HARL.methods import SwAV
 
 from .utils import DATA_KWARGS, gen_base_kwargs, gen_batch, prepare_dummy_dataloaders
 

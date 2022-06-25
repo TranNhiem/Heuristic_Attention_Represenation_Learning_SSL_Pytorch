@@ -19,8 +19,8 @@
 
 import torch
 import torch.nn as nn
-from solo.losses import swav_loss_func
-from solo.utils.sinkhorn_knopp import SinkhornKnopp
+from HARL.losses import swav_loss_func
+from HARL.utils.sinkhorn_knopp import SinkhornKnopp
 
 
 def get_assignments(preds):

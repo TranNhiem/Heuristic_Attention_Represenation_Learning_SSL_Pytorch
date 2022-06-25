@@ -18,7 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from solo.losses import simsiam_loss_func
+from HARL.losses import simsiam_loss_func
 
 
 def test_simsiam_loss():

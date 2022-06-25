@@ -23,7 +23,7 @@ import pytest
 import torch
 import torch.nn as nn
 from pytorch_lightning import Trainer
-from solo.methods.linear import LinearModel
+from HARL.methods.linear import LinearModel
 from torchvision.models import resnet18
 
 from .utils import (

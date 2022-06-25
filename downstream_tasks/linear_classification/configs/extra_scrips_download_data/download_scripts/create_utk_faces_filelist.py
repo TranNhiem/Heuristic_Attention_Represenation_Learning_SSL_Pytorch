@@ -33,8 +33,8 @@ import argparse
 import os
 
 from fvcore.common.file_io import PathManager
-from solo.utils.env import setup_path_manager
-from solo.utils.io import save_file
+from HARL.utils.env import setup_path_manager
+from HARL.utils.io import save_file
 
 GENDER_MAPPING = {
     0: "male",

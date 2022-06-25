@@ -8,8 +8,8 @@ import os
 import shutil
 
 import numpy as np
-from solo.utils.download import download_and_extract_archive, download_url
-from solo.utils.io import save_file, load_file, cleanup_dir
+from HARL.utils.download import download_and_extract_archive, download_url
+from HARL.utils.io import save_file, load_file, cleanup_dir
 
 # Dataset has corrupted files. See https://www.robots.ox.ac.uk/~vgg/data/parisbuildings/
 CORRUPTED_FILES = [

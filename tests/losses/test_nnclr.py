@@ -18,7 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from solo.losses import nnclr_loss_func
+from HARL.losses import nnclr_loss_func
 
 
 def test_nnclr_loss():

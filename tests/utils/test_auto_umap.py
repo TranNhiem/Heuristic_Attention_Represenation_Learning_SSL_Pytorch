@@ -21,8 +21,8 @@ import argparse
 import shutil
 
 from pytorch_lightning import Trainer
-from solo.methods import BarlowTwins
-from solo.utils.auto_umap import AutoUMAP
+from HARL.methods import BarlowTwins
+from HARL.utils.auto_umap import AutoUMAP
 
 from ..methods.utils import DATA_KWARGS, gen_base_kwargs, prepare_dummy_dataloaders
 

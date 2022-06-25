@@ -23,7 +23,7 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-from solo.args.utils import additional_setup_linear, additional_setup_pretrain
+from HARL.args.utils import additional_setup_linear, additional_setup_pretrain
 from tests.dali.utils import DummyDataset
 
 

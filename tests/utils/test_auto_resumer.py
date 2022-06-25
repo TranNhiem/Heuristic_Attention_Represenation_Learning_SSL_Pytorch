@@ -22,9 +22,9 @@ import json
 import shutil
 
 from pytorch_lightning import Trainer
-from solo.methods import BarlowTwins
-from solo.utils.auto_resumer import AutoResumer
-from solo.utils.checkpointer import Checkpointer
+from HARL.methods import BarlowTwins
+from HARL.utils.auto_resumer import AutoResumer
+from HARL.utils.checkpointer import Checkpointer
 
 from ..methods.utils import DATA_KWARGS, gen_base_kwargs, prepare_dummy_dataloaders
 

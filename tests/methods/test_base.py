@@ -19,7 +19,7 @@
 
 import pytest
 import torch
-from solo.methods.base import BaseMethod
+from HARL.methods.base import BaseMethod
 
 from .utils import DATA_KWARGS, gen_base_kwargs
 

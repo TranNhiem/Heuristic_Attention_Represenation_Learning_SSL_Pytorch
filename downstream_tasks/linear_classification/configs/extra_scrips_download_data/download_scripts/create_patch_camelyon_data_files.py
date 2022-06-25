@@ -12,7 +12,7 @@ from typing import NamedTuple
 from PIL import Image
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from solo.utils.download import download_url
+from HARL.utils.download import download_url
 
 
 try:
