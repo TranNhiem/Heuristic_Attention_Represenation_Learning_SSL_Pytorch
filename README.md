@@ -1,5 +1,8 @@
 # HARL - Heuristic Attention Representation Learning for Self-Supervised Pretraining
 
+<span style="color: red"><strong> </strong></span> (HARL <a href="https://pdfs.semanticscholar.org/0040/f14dac94ea4fd96072f2b98686b57dde2dfb.pdf?_ga=2.79292561.484170449.1659857629-2034857879.1659857629"> Paper here</a>)
+
+
 <span style="color: red"><strong> </strong></span> This is offical implemenation of HARL framework</a>.
 
 <span style="color: red"><strong> </strong></span> Colabs for <a href=""> HARL framework </a> are added, see <a href="">here</a>.
