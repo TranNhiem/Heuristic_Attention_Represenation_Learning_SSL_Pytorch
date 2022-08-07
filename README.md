@@ -157,12 +157,12 @@ Implementations in Tensorflow 2:
 ## Citation
 
 `
-@inproceedings{tran2022HARL,
-  title={MASSRL},
-  author={},
-  booktitle={},
-  pages={},
-  year={2022}
+@article{Tran2022HeuristicAR,
+  title={Heuristic Attention Representation Learning for Self-Supervised Pretraining},
+  author={Van-Nhiem Tran and Shenxiu Liu and Yung-hui Li and Jia-Ching Wang},
+  journal={Sensors (Basel, Switzerland)},
+  year={2022},
+  volume={22}
 }
 `
 
