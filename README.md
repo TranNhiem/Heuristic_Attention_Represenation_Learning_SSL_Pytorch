@@ -8,7 +8,7 @@
 <span style="color: red"><strong> </strong></span> Colabs for <a href=""> HARL framework </a> are added, see <a href="">here</a>.
 
 <div align="center">
-  <img width="50%" alt="HARL Framework Illustration" src="images/HARL_framework.png">
+  <img width="50%" alt="HARL Framework Illustration" src="images/HARL.GIF">
 </div>
 <div align="center">
   End-to-End HARL Framework (from <a href="https://www.hh-ri.com/2022/05/30/heuristic-attention-representation-learning-for-self-supervised-pretraining/">our blog here</a>).
